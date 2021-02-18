@@ -1,4 +1,5 @@
 ColAruco
+
 Source code for the controler of a rgb led matrix that displays Aruco codes. Upload the main.cpp to the arduino controler and then run the python script.
 
 When running the python script pass the serial port an argument (if not passed defaults to /dev/ttyACM0) The python code calls for a c++ subprocess on runtime (arucoDictTranslator.cpp) which might need to be manually compiled with the correct name after clonning the rep (due to ubuntu permissions).
