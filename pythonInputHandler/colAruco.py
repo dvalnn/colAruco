@@ -48,7 +48,7 @@ def arduino_read():
 def fetch_aruco(id: str, size: str) -> str:
 
     completed_process = subprocess.run(
-        ["../colAruco_code_gen/arucoDictTranslator", id, size], capture_output=True, text=True)
+        ["../arucoCodeGen/arucoDictTranslator", id, size], capture_output=True, text=True)
     return completed_process.stdout.strip("\n").strip()
 
 
