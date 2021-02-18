@@ -1,4 +1,4 @@
-ColAruco
+# ColAruco
 
 Source code for the controler of a rgb led matrix that displays Aruco codes. Upload the main.cpp to the arduino controler and then run the python script.
 
