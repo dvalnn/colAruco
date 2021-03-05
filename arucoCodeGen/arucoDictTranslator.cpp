@@ -94,7 +94,7 @@ void byteTranslator(uint8_t codedBytes[], int size, int translatedBytes[])
     delete[] bits;
 }
 
-int addBorder(int translatedBytes[], int size, int withBorder[])
+/* int addBorder(int translatedBytes[], int size, int withBorder[])
 {
     size += 4;
 
@@ -118,4 +118,4 @@ int fillWith1(int size)
     for (int i = 0; i < size; i++)
         value += BIT(i);
     return value;
-}
+} */

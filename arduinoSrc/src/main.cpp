@@ -34,13 +34,16 @@ Adafruit_NeoPixel leds = Adafruit_NeoPixel(LED_COUNT, PIN, NEO_GRB + NEO_KHZ800)
 void clearLEDs();
 void resetLedStrip();
 
-bool inputParser(uint32_t *color, uint16_t aruco[], uint8_t *size, uint8_t *brightness);
+bool inputParser(uint32_t *color, uint8_t aruco[], uint8_t *size, uint8_t *brightness);
 void switchColor(uint32_t *color, String userInput);
 
-void applyAruco(uint16_t arCode[], uint8_t size, uint32_t color);
+void applyAruco(uint8_t arCode[], uint8_t size, uint32_t color);
 
-void loadFromEEPROM(uint16_t aruco[], uint8_t *size, uint8_t *brightness, uint32_t *color);
-void saveToEEPROM(uint16_t aruco[], uint8_t size, uint8_t brightness, uint32_t color);
+void loadFromEEPROM(uint8_t aruco[], uint8_t *size, uint8_t *brightness, uint32_t *color);
+void saveToEEPROM(uint8_t aruco[], uint8_t size, uint8_t brightness, uint32_t color);
+
+int addBorder(uint8_t arcode[], int size, uint16_t withBorder[]);
+int fillWith1(int size);
 
 //* setup code
 void setup()
@@ -53,7 +56,7 @@ void setup()
 
   uint32_t colorOnDisplay = 0;
   uint8_t brightnessOnDiplay = 0;
-  uint16_t arucoOnDisplay[10] = {0};
+  uint8_t arucoOnDisplay[9] = {0};
   uint8_t arucoCodeSize = 0;
 
   loadFromEEPROM(arucoOnDisplay, &arucoCodeSize, &brightnessOnDiplay, &colorOnDisplay);
@@ -75,7 +78,7 @@ void loop()
 
   static uint32_t colorOnDisplay = 0;
   static uint8_t brightnessOnDiplay = 0;
-  static uint16_t arucoOnDisplay[10] = {0};
+  static uint8_t arucoOnDisplay[6] = {0};
   static uint8_t arucoCodeSize = 0;
 
   static bool initialized = false;
@@ -117,7 +120,7 @@ void loop()
  * @return true 
  * @return false 
  */
-bool inputParser(uint32_t *color, uint16_t aruco[], uint8_t *size, uint8_t *brightness)
+bool inputParser(uint32_t *color, uint8_t aruco[], uint8_t *size, uint8_t *brightness)
 {
   if (Serial.available() > 0)
   {
@@ -141,7 +144,7 @@ bool inputParser(uint32_t *color, uint16_t aruco[], uint8_t *size, uint8_t *brig
     {
       *size = (uint8_t)Serial.parseInt(SKIP_WHITESPACE);
       for (short i = 0; i < *size; i++)
-        aruco[i] = (uint16_t)Serial.parseInt(SKIP_WHITESPACE);
+        aruco[i] = (uint8_t)Serial.parseInt(SKIP_WHITESPACE);
       return 1;
     }
     if (flag.indexOf("br") >= 0)
@@ -181,10 +184,12 @@ void switchColor(uint32_t *color, String userInput)
  * @param size 
  * @param color 
  */
-void applyAruco(uint16_t arCode[], uint8_t size, uint32_t color)
+void applyAruco(uint8_t arCode[], uint8_t size, uint32_t color)
 {
 
-  uint16_t *code = arCode;
+  uint16_t code[10];
+
+  size = addBorder(arCode, size, code);
 
   for (short line = 0; line < size; line++)
   {
@@ -246,7 +251,7 @@ void resetLedStrip()
  * @param brightness   - brigtness value to store
  * @param color        - color value to store
  */
-void saveToEEPROM(uint16_t aruco[], uint8_t size, uint8_t brightness, uint32_t color)
+void saveToEEPROM(uint8_t aruco[], uint8_t size, uint8_t brightness, uint32_t color)
 {
   static uint8_t slot = 0;
 
@@ -279,7 +284,7 @@ void saveToEEPROM(uint16_t aruco[], uint8_t size, uint8_t brightness, uint32_t c
  * @param brightness - variable to store the loaded brigtness value (8 bit int)
  * @param color      - variable to store the loaded color value (32 bit int)
  */
-void loadFromEEPROM(uint16_t aruco[], uint8_t *size, uint8_t *brightness, uint32_t *color)
+void loadFromEEPROM(uint8_t aruco[], uint8_t *size, uint8_t *brightness, uint32_t *color)
 {
   static uint8_t slot = 0;
 
@@ -297,4 +302,30 @@ void loadFromEEPROM(uint16_t aruco[], uint8_t *size, uint8_t *brightness, uint32
 
   EEPROM.get(slot * SAVE_SIZE + 8, *brightness);
   EEPROM.get(slot * SAVE_SIZE + 9, *color);
+}
+
+int addBorder(uint8_t arcode[], int size, uint16_t withBorder[])
+{
+    size += 4;
+
+    //primeira e última filas preenchidas com 1 em todas as posições
+    withBorder[0] = fillWith1(size);
+    withBorder[size - 1] = fillWith1(size);
+    //segunda e penúltima filas preenchidas com 10..(0)..01
+    withBorder[1] = BIT(size - 1) + 1;
+    withBorder[size - 2] = BIT(size - 1) + 1;
+
+    //restantes filas preenchidas com o código com borda de 1 e 0
+    for (short i = 2; i < size - 2; i++)
+        withBorder[i] += (BIT(size - 1) + (arcode[i - 2] << 2) + 1);
+        
+    return size;
+}
+
+int fillWith1(int size)
+{
+    int value = 0;
+    for (int i = 0; i < size; i++)
+        value += BIT(i);
+    return value;
 }
