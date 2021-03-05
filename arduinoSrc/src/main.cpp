@@ -34,13 +34,13 @@ Adafruit_NeoPixel leds = Adafruit_NeoPixel(LED_COUNT, PIN, NEO_GRB + NEO_KHZ800)
 void clearLEDs();
 void resetLedStrip();
 
-bool inputParser(uint32_t *color, uint8_t aruco[], uint8_t *size, uint8_t *brightness);
+bool inputParser(uint32_t *color, uint16_t aruco[], uint8_t *size, uint8_t *brightness);
 void switchColor(uint32_t *color, String userInput);
 
-void applyAruco(uint8_t arCode[], uint8_t size, uint32_t color);
+void applyAruco(uint16_t arCode[], uint8_t size, uint32_t color);
 
-void loadFromEEPROM(uint8_t aruco[], uint8_t *size, uint8_t *brightness, uint32_t *color);
-void saveToEEPROM(uint8_t aruco[], uint8_t size, uint8_t brightness, uint32_t color);
+void loadFromEEPROM(uint16_t aruco[], uint8_t *size, uint8_t *brightness, uint32_t *color);
+void saveToEEPROM(uint16_t aruco[], uint8_t size, uint8_t brightness, uint32_t color);
 
 //* setup code
 void setup()
@@ -53,7 +53,7 @@ void setup()
 
   uint32_t colorOnDisplay = 0;
   uint8_t brightnessOnDiplay = 0;
-  uint8_t arucoOnDisplay[9] = {0};
+  uint16_t arucoOnDisplay[10] = {0};
   uint8_t arucoCodeSize = 0;
 
   loadFromEEPROM(arucoOnDisplay, &arucoCodeSize, &brightnessOnDiplay, &colorOnDisplay);
@@ -75,7 +75,7 @@ void loop()
 
   static uint32_t colorOnDisplay = 0;
   static uint8_t brightnessOnDiplay = 0;
-  static uint8_t arucoOnDisplay[9] = {0};
+  static uint16_t arucoOnDisplay[10] = {0};
   static uint8_t arucoCodeSize = 0;
 
   static bool initialized = false;
@@ -117,7 +117,7 @@ void loop()
  * @return true 
  * @return false 
  */
-bool inputParser(uint32_t *color, uint8_t aruco[], uint8_t *size, uint8_t *brightness)
+bool inputParser(uint32_t *color, uint16_t aruco[], uint8_t *size, uint8_t *brightness)
 {
   if (Serial.available() > 0)
   {
@@ -141,7 +141,7 @@ bool inputParser(uint32_t *color, uint8_t aruco[], uint8_t *size, uint8_t *brigh
     {
       *size = (uint8_t)Serial.parseInt(SKIP_WHITESPACE);
       for (short i = 0; i < *size; i++)
-        aruco[i] = (uint8_t)Serial.parseInt(SKIP_WHITESPACE);
+        aruco[i] = (uint16_t)Serial.parseInt(SKIP_WHITESPACE);
       return 1;
     }
     if (flag.indexOf("br") >= 0)
@@ -181,10 +181,10 @@ void switchColor(uint32_t *color, String userInput)
  * @param size 
  * @param color 
  */
-void applyAruco(uint8_t arCode[], uint8_t size, uint32_t color)
+void applyAruco(uint16_t arCode[], uint8_t size, uint32_t color)
 {
 
-  uint8_t *code = arCode;
+  uint16_t *code = arCode;
 
   for (short line = 0; line < size; line++)
   {
@@ -246,7 +246,7 @@ void resetLedStrip()
  * @param brightness   - brigtness value to store
  * @param color        - color value to store
  */
-void saveToEEPROM(uint8_t aruco[], uint8_t size, uint8_t brightness, uint32_t color)
+void saveToEEPROM(uint16_t aruco[], uint8_t size, uint8_t brightness, uint32_t color)
 {
   static uint8_t slot = 0;
 
@@ -279,7 +279,7 @@ void saveToEEPROM(uint8_t aruco[], uint8_t size, uint8_t brightness, uint32_t co
  * @param brightness - variable to store the loaded brigtness value (8 bit int)
  * @param color      - variable to store the loaded color value (32 bit int)
  */
-void loadFromEEPROM(uint8_t aruco[], uint8_t *size, uint8_t *brightness, uint32_t *color)
+void loadFromEEPROM(uint16_t aruco[], uint8_t *size, uint8_t *brightness, uint32_t *color)
 {
   static uint8_t slot = 0;
 
