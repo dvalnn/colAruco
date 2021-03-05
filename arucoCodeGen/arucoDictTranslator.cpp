@@ -6,13 +6,17 @@
 #include "predefined_dictionaries/aruco_dict_7x7_1000.h"
 #include "predefined_dictionaries/aruco_dict_original_1000.h"
 
-#define MAX_CODE_SIZE 7
-#define MAX_CODE_SIZE_WITH_BORDER 9
+#define BIT(n) (1 << n)
+
+#define MAX_CODE_SIZE 6
+#define MAX_CODE_SIZE_WITH_BORDER 10
 
 using namespace std;
 
 void byteTranslator(uint8_t *codedBytes, int size, int *translatedBytes);
-void addBorder(int translatedBytes[], int *size, int withBorder[]);
+void addZeroBorder(int translatedBytes[], int size, int withBorder[]);
+int fillWith1(int size);
+int addBorder(int translatedBytes[], int size, int withBorder[]);
 
 int main(int argc, char *argv[])
 {
@@ -44,18 +48,18 @@ int main(int argc, char *argv[])
         codeFromDict = DICT_6X6_1000_BYTES[id][0];
         size = 6;
         break;
-    case 7:
-        codeFromDict = DICT_7X7_1000_BYTES[id][0];
-        size = 7;
-        break;
+    // case 7:
+    //     codeFromDict = DICT_7X7_1000_BYTES[id][0];
+    //     size = 7;
+    //     break;
     default:
         return 0;
     }
 
     byteTranslator(codeFromDict, size, translatedCode);
-    addBorder(translatedCode, &size, arduinoInput);
-    cout << "code " << size <<" ";
+    size = addBorder(translatedCode, size, arduinoInput);
 
+    cout << "code " << size << " ";
     for (short i = 0; i < size; i++)
         cout << arduinoInput[i] << " ";
 
@@ -88,10 +92,30 @@ void byteTranslator(uint8_t codedBytes[], int size, int translatedBytes[])
     for (short i = 0; i < bitsCount; i++)
         translatedBytes[i / size] += bits[i] << ((size - 1) - (i % size));
     delete[] bits;
-} 
+}
 
-void addBorder(int translatedBytes[], int *size, int withBorder[]){
-    for (short i = 1; i < *size + 1; i++)
-        withBorder[i] = translatedBytes[i - 1] << 1;
-    (*size) += 2;
+int addBorder(int translatedBytes[], int size, int withBorder[])
+{
+    size += 4;
+
+    //primeira e última filas preenchidas com 1 em todas as posições
+    withBorder[0] = fillWith1(size);
+    withBorder[size - 1] = fillWith1(size);
+    //segunda e penúltima filas preenchidas com 10..(0)..01
+    withBorder[1] = BIT(size - 1) + 1;
+    withBorder[size - 2] = BIT(size - 1) + 1;
+
+    //restantes filas preenchidas com o código com borda de 1 e 0
+    for (short i = 2; i < size - 2; i++)
+        withBorder[i] += (BIT(size - 1) + (translatedBytes[i - 2] << 2) + 1);
+        
+    return size;
+}
+
+int fillWith1(int size)
+{
+    int value = 0;
+    for (int i = 0; i < size; i++)
+        value += BIT(i);
+    return value;
 }
