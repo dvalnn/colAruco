@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
     // int translatedCode[7] = {0};
     uint8_t *codeFromDict;
     int translatedCode[MAX_CODE_SIZE] = {0};
-    int arduinoInput[MAX_CODE_SIZE_WITH_BORDER] = {0};
+    // int arduinoInput[MAX_CODE_SIZE_WITH_BORDER] = {0};
 
     switch (type)
     {
@@ -57,11 +57,11 @@ int main(int argc, char *argv[])
     }
 
     byteTranslator(codeFromDict, size, translatedCode);
-    size = addBorder(translatedCode, size, arduinoInput);
+    // size = addBorder(translatedCode, size, arduinoInput);
 
     cout << "code " << size << " ";
     for (short i = 0; i < size; i++)
-        cout << arduinoInput[i] << " ";
+        cout << translatedCode[i] << " ";
 
     cout << endl;
 
