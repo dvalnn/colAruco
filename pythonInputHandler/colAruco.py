@@ -27,11 +27,11 @@ PREDEFINED_COLORS = {
 }
 
 ARUCO_DICT = {
-    "dict_4x4": "4",
-    "dict_5x5": "5",
-    "dict_6x6": "6",
-    "dict_7x7": "7",
-    "dict_original": "0",
+    "dict4": "4",
+    "dict5": "5",
+    "dict6": "6",
+    # "dict7": "7",
+    "dict_or": "0",
 }
 
 
@@ -102,14 +102,14 @@ def input_parser(text: str) -> tuple:
 
     elif "code" in usr_input:
         try:
-            tmp1 = int(usr_input[usr_input.index("code") + 1])
-            tmp2 = usr_input[usr_input.index("code") + 2]
+            id = int(usr_input[usr_input.index("code") + 1])
+            dict_type = usr_input[usr_input.index("code") + 2]
         except IndexError:
             print("[ERROR] Invalid code input - values not found")
         else:
-            if tmp1 in range(0, 1000) and tmp2 in ARUCO_DICT.keys():
+            if id in range(0, 1000) and dict_type in ARUCO_DICT.keys():
                 flag = "code"
-                formated_input += fetch_aruco(str(tmp1), ARUCO_DICT[tmp2])
+                formated_input += fetch_aruco(str(id), ARUCO_DICT[dict_type])
             else:
                 print("\n[ERROR] Invalid code input\n")
 
@@ -132,7 +132,7 @@ while True:
         if len(serial_out) != 0 and serial_out[2][-1] != "0":
             break
 
-        if time() - loop_start >= 3: #times out so that the code doesn't get stuck waiting for a response
+        if time() - loop_start >= 3:  # times out so that the code doesn't get stuck waiting for a response
             break
 
     for element in serial_out:

@@ -22,7 +22,7 @@
 #define SAVE_SIZE 10
 #define SLOT_LIMIT 102
 
-#define BIT(n) (1 << n)
+#define BIT(n) (1 << (n))
 
 // LED stripe is an object of the Adafruit_Neopixel class
 Adafruit_NeoPixel leds = Adafruit_NeoPixel(LED_COUNT, PIN, NEO_GRB + NEO_KHZ800);
@@ -42,7 +42,7 @@ void applyAruco(uint8_t arCode[], uint8_t size, uint32_t color);
 void loadFromEEPROM(uint8_t aruco[], uint8_t *size, uint8_t *brightness, uint32_t *color);
 void saveToEEPROM(uint8_t aruco[], uint8_t size, uint8_t brightness, uint32_t color);
 
-int addBorder(uint8_t arcode[], int size, uint16_t withBorder[]);
+int addBorder(uint8_t arcode[], int size, int withBorder[]);
 int fillWith1(int size);
 
 //* setup code
@@ -93,7 +93,7 @@ void loop()
     Serial.println(brightnessOnDiplay, DEC);
     Serial.print("Color on display: ");
     Serial.println(colorOnDisplay, HEX);
-    Serial.print("Aruco code size (with added border): ");
+    Serial.print("Aruco code size : ");
     Serial.println(arucoCodeSize);
     Serial.print("Aruco code on display (bytes): ");
     for (short i = 0; i < arucoCodeSize; i++)
@@ -187,7 +187,7 @@ void switchColor(uint32_t *color, String userInput)
 void applyAruco(uint8_t arCode[], uint8_t size, uint32_t color)
 {
 
-  uint16_t code[10];
+  int code[10] = {0};
 
   size = addBorder(arCode, size, code);
 
@@ -304,7 +304,7 @@ void loadFromEEPROM(uint8_t aruco[], uint8_t *size, uint8_t *brightness, uint32_
   EEPROM.get(slot * SAVE_SIZE + 9, *color);
 }
 
-int addBorder(uint8_t arcode[], int size, uint16_t withBorder[])
+int addBorder(uint8_t arcode[], int size, int withBorder[])
 {
     size += 4;
 
