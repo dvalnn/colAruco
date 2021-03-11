@@ -57,7 +57,6 @@ int main(int argc, char *argv[])
     }
 
     byteTranslator(codeFromDict, size, translatedCode);
-    // size = addBorder(translatedCode, size, arduinoInput);
 
     cout << "code " << size << " ";
     for (short i = 0; i < size; i++)
@@ -75,7 +74,6 @@ void byteTranslator(uint8_t codedBytes[], int size, int translatedBytes[])
 
     short *bits;
     bits = new short[bitsCount];
-
     for (int i = 0; i < size; i++)
     {
         short start = 8;
@@ -93,29 +91,3 @@ void byteTranslator(uint8_t codedBytes[], int size, int translatedBytes[])
         translatedBytes[i / size] += bits[i] << ((size - 1) - (i % size));
     delete[] bits;
 }
-
-/* int addBorder(int translatedBytes[], int size, int withBorder[])
-{
-    size += 4;
-
-    //primeira e última filas preenchidas com 1 em todas as posições
-    withBorder[0] = fillWith1(size);
-    withBorder[size - 1] = fillWith1(size);
-    //segunda e penúltima filas preenchidas com 10..(0)..01
-    withBorder[1] = BIT(size - 1) + 1;
-    withBorder[size - 2] = BIT(size - 1) + 1;
-
-    //restantes filas preenchidas com o código com borda de 1 e 0
-    for (short i = 2; i < size - 2; i++)
-        withBorder[i] += (BIT(size - 1) + (translatedBytes[i - 2] << 2) + 1);
-        
-    return size;
-}
-
-int fillWith1(int size)
-{
-    int value = 0;
-    for (int i = 0; i < size; i++)
-        value += BIT(i);
-    return value;
-} */
