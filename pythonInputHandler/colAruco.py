@@ -34,7 +34,6 @@ ARUCO_DICT = {
     "dict_or": "0",
 }
 
-
 def arduino_write(serial_in: str):
     arduino.write(bytes(serial_in, 'utf-8'))
     arduino.flush()
