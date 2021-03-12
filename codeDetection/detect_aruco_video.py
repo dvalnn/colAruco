@@ -2,7 +2,6 @@
 # python detect_aruco_video.py
 
 # import the necessary packages
-from os import pipe
 from imutils.video import VideoStream
 import argparse
 import imutils
@@ -31,15 +30,11 @@ ARUCO_DICT = {
     "DICT_6X6_100": cv2.aruco.DICT_6X6_100,
     "DICT_6X6_250": cv2.aruco.DICT_6X6_250,
     "DICT_6X6_1000": cv2.aruco.DICT_6X6_1000,
-    "DICT_7X7_50": cv2.aruco.DICT_7X7_50,
-    "DICT_7X7_100": cv2.aruco.DICT_7X7_100,
-    "DICT_7X7_250": cv2.aruco.DICT_7X7_250,
-    "DICT_7X7_1000": cv2.aruco.DICT_7X7_1000,
+    # "DICT_7X7_50": cv2.aruco.DICT_7X7_50,
+    # "DICT_7X7_100": cv2.aruco.DICT_7X7_100,
+    # "DICT_7X7_250": cv2.aruco.DICT_7X7_250,
+    # "DICT_7X7_1000": cv2.aruco.DICT_7X7_1000,
     "DICT_ARUCO_ORIGINAL": cv2.aruco.DICT_ARUCO_ORIGINAL,
-    # "DICT_APRILTAG_16h5": cv2.aruco.DICT_APRILTAG_16h5,
-    # "DICT_APRILTAG_25h9": cv2.aruco.DICT_APRILTAG_25h9,
-    # "DICT_APRILTAG_36h10": cv2.aruco.DICT_APRILTAG_36h10,
-    # "DICT_APRILTAG_36h11": cv2.aruco.DICT_APRILTAG_36h11
 }
 
 ARUCO_SIZES = {
@@ -55,10 +50,10 @@ ARUCO_SIZES = {
     "DICT_6X6_100": 6,
     "DICT_6X6_250": 6,
     "DICT_6X6_1000": 6,
-    "DICT_7X7_50": 7,
-    "DICT_7X7_100": 7,
-    "DICT_7X7_250": 7,
-    "DICT_7X7_1000": 7,
+    # "DICT_7X7_50": 7,
+    # "DICT_7X7_100": 7,
+    # "DICT_7X7_250": 7,
+    # "DICT_7X7_1000": 7,
     "DICT_ARUCO_ORIGINAL": 5
 }
 
@@ -66,10 +61,6 @@ if args["type"] not in ARUCO_DICT:
     print("[FATAL] ArUCo tag of '{}' is not supported".format(
         args["type"]))
     sys.exit(0)
-
-# completed_process = __import__("subprocess").run(
-#     ["/home/dvalinn/prog/arucoOpenCV/colAruco_code_gen/arucoDictTranslator", str(args["id"]), str(ARUCO_SIZES[args["type"]])], capture_output=True, text=True)
-# print("aruco input: ", "code", ARUCO_SIZES[args["type"]] ,completed_process.stdout[completed_process.stdout.index("ar") + 3 :])
 
 # load the ArUCo dictionary and grab the ArUCo parameters
 print("[INFO] detecting '{}' tags...".format(args["type"]))
@@ -81,8 +72,7 @@ print("[INFO] starting video stream...")
 vs = VideoStream(src=0).start()
 time.sleep(2.0)
 
-#daqui para baixo acho que deve estar igual ao pyImageSearch e que n mudei nada
-cam = cv2.VideoCapture(0)
+cam = cv2.VideoCapture("/dev/video1")
 
 # loop over the frames from the video stream
 while True:
@@ -101,7 +91,8 @@ while True:
     # frame = cv2.cvtColor(srcframe,cv2.COLOR_BGR2GRAY)
 
     # detect ArUco markers in the input frame
-    (corners, ids, rejected) = cv2.aruco.detectMarkers(frame, arucoDict, parameters=arucoParams)
+    (corners, ids, rejected) = cv2.aruco.detectMarkers(
+        frame, arucoDict, parameters=arucoParams)
 
     # verify *at least* one ArUco marker was detected
     if len(corners) > 0:
