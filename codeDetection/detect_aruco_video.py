@@ -7,6 +7,7 @@ import argparse
 import imutils
 import time
 import cv2
+import numpy as np
 import sys
 
 # construct the argument parser and parse the arguments
@@ -69,10 +70,20 @@ arucoParams = cv2.aruco.DetectorParameters_create()
 
 # initialize the video stream and allow the camera sensor to warm up
 print("[INFO] starting video stream...")
-vs = VideoStream(src=0).start()
-time.sleep(2.0)
+vs = VideoStream(src=1, resolution=(1920, 1080)).start()
+# time.sleep(2.0)
 
-cam = cv2.VideoCapture("/dev/video1")
+# frame: np.ndarray = vs.read()
+# cv2.imshow("original", frame)
+
+# delta = 50
+# b, g, r = frame[:, :, 0], frame[:, :, 1], frame[:, :, 2]
+
+# frame[(r > (g + delta)) & (r > (b + delta))] = 255
+
+# cv2.imshow("masked", frame)
+# print(type(frame))
+# print(frame.ndim)
 
 # loop over the frames from the video stream
 while True:
@@ -86,9 +97,23 @@ while True:
         sys.exit(0)
 
     frame = imutils.resize(frame, width=1000)
+    frame = cv2.bilateralFilter(frame, 15, 75, 90)
 
-    # flag, srcframe = cam.read()
-    # frame = cv2.cvtColor(srcframe,cv2.COLOR_BGR2GRAY)
+    delta = 20
+    image = frame.copy()
+    b, g, r = image[:, :, 0], image[:, :, 1], image[:, :, 2]
+
+    zeros = np.zeros(r.shape, dtype="uint8")
+    # (g < 255 - delta) & (b < 255 - delta) &
+    mask1 = (r > (g + delta)) & (r > (b + delta))
+    mask2 = (g < 255 - delta) & (b < 255 - delta)
+    redMask = zeros.copy()
+    redMask[mask1 & mask2] = 255
+
+    image = cv2.merge([zeros, zeros, redMask])
+
+    cv2.imshow("Color Mask", image)
+    
 
     # detect ArUco markers in the input frame
     (corners, ids, rejected) = cv2.aruco.detectMarkers(
