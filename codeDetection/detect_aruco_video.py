@@ -1,11 +1,10 @@
 # USAGE
-# python detect_aruco_video.py
+# python detect_aruco_video.py -t [dictType]
 
 # import the necessary packages
 from imutils.video import VideoStream
 import argparse
 import imutils
-import time
 import cv2
 import numpy as np
 import sys
@@ -86,7 +85,7 @@ def mask(frame: np.ndarray) -> np.ndarray:
     masked_image = zeros.copy()
     masked_image[colorMask & falsePositives] = 255
 
-    return  masked_image
+    return masked_image
 
 
 def drawDetectionLines(frame, corners, ids):
