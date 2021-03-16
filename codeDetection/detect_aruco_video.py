@@ -71,93 +71,87 @@ arucoParams = cv2.aruco.DetectorParameters_create()
 # initialize the video stream and allow the camera sensor to warm up
 print("[INFO] starting video stream...")
 vs = VideoStream(src=1, resolution=(1920, 1080)).start()
-# time.sleep(2.0)
 
-# frame: np.ndarray = vs.read()
-# cv2.imshow("original", frame)
 
-# delta = 50
-# b, g, r = frame[:, :, 0], frame[:, :, 1], frame[:, :, 2]
+def mask(frame: np.ndarray) -> np.ndarray:
 
-# frame[(r > (g + delta)) & (r > (b + delta))] = 255
+    delta = 20
+    b, g, r = frame[:, :, 0], frame[:, :, 1], frame[:, :, 2]
 
-# cv2.imshow("masked", frame)
-# print(type(frame))
-# print(frame.ndim)
+    zeros = np.zeros(r.shape, dtype="uint8")
+
+    colorMask = (r > (g + delta)) & (r > (b + delta))
+    # filter false positives that come up if _ + delta > 255
+    falsePositives = (g < 255 - delta) & (b < 255 - delta)
+    masked_image = zeros.copy()
+    masked_image[colorMask & falsePositives] = 255
+
+    return  masked_image
+
+
+def drawDetectionLines(frame, corners, ids):
+    # loop over the detected ArUCo corners
+    for (markerCorner, markerID) in zip(corners, ids):
+        # extract the marker corners (which are always returned
+        # in top-left, top-right, bottom-right, and bottom-left
+        # order)
+        corners = markerCorner.reshape((4, 2))
+        (topLeft, topRight, bottomRight, bottomLeft) = corners
+
+        # convert each of the (x, y)-coordinate pairs to integers
+        topRight = (int(topRight[0]), int(topRight[1]))
+        bottomRight = (int(bottomRight[0]), int(bottomRight[1]))
+        bottomLeft = (int(bottomLeft[0]), int(bottomLeft[1]))
+        topLeft = (int(topLeft[0]), int(topLeft[1]))
+
+        # draw the bounding box of the ArUCo detection
+        cv2.line(frame, topLeft, topRight, (0, 255, 0), 5)
+        cv2.line(frame, topRight, bottomRight, (0, 255, 0), 5)
+        cv2.line(frame, bottomRight, bottomLeft, (0, 255, 0), 5)
+        cv2.line(frame, bottomLeft, topLeft, (0, 255, 0), 5)
+
+        # compute and draw the center (x, y)-coordinates of the
+        # ArUco marker
+        cX = int((topLeft[0] + bottomRight[0]) / 2.0)
+        cY = int((topLeft[1] + bottomRight[1]) / 2.0)
+        cv2.circle(frame, (cX, cY), 4, (0, 0, 255), -1)
+
+        # draw the ArUco marker ID on the frame
+        cv2.putText(frame, "  id = " + str(markerID),
+                    (topLeft[0], topLeft[1] - 15),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    1, (0, 255, 0), 3)
+
 
 # loop over the frames from the video stream
 while True:
     # grab the frame from the threaded video stream and resize it
     # to have a maximum width of 600 pixels
-
     frame = vs.read()
+
+    frame = imutils.resize(frame, width=1000)
+    frame = cv2.bilateralFilter(frame, 15, 75, 90)
 
     if frame is None:
         print("[FATAL] camera feed not found")
         sys.exit(0)
 
-    frame = imutils.resize(frame, width=1000)
-    frame = cv2.bilateralFilter(frame, 15, 75, 90)
-
-    delta = 20
-    image = frame.copy()
-    b, g, r = image[:, :, 0], image[:, :, 1], image[:, :, 2]
-
-    zeros = np.zeros(r.shape, dtype="uint8")
-    # (g < 255 - delta) & (b < 255 - delta) &
-    mask1 = (r > (g + delta)) & (r > (b + delta))
-    mask2 = (g < 255 - delta) & (b < 255 - delta)
-    redMask = zeros.copy()
-    redMask[mask1 & mask2] = 255
-
-    image = cv2.merge([zeros, zeros, redMask])
-
-    cv2.imshow("Color Mask", image)
-    
-
+    masked_image = mask(frame)
+    masked_image = cv2.bilateralFilter(masked_image, 15, 75, 90)
     # detect ArUco markers in the input frame
     (corners, ids, rejected) = cv2.aruco.detectMarkers(
-        frame, arucoDict, parameters=arucoParams)
+        masked_image, arucoDict, parameters=arucoParams)
 
     # verify *at least* one ArUco marker was detected
     if len(corners) > 0:
         # flatten the ArUco IDs list
         ids = ids.flatten()
-
-        # loop over the detected ArUCo corners
-        for (markerCorner, markerID) in zip(corners, ids):
-            # extract the marker corners (which are always returned
-            # in top-left, top-right, bottom-right, and bottom-left
-            # order)
-            corners = markerCorner.reshape((4, 2))
-            (topLeft, topRight, bottomRight, bottomLeft) = corners
-
-            # convert each of the (x, y)-coordinate pairs to integers
-            topRight = (int(topRight[0]), int(topRight[1]))
-            bottomRight = (int(bottomRight[0]), int(bottomRight[1]))
-            bottomLeft = (int(bottomLeft[0]), int(bottomLeft[1]))
-            topLeft = (int(topLeft[0]), int(topLeft[1]))
-
-            # draw the bounding box of the ArUCo detection
-            cv2.line(frame, topLeft, topRight, (0, 255, 0), 5)
-            cv2.line(frame, topRight, bottomRight, (0, 255, 0), 5)
-            cv2.line(frame, bottomRight, bottomLeft, (0, 255, 0), 5)
-            cv2.line(frame, bottomLeft, topLeft, (0, 255, 0), 5)
-
-            # compute and draw the center (x, y)-coordinates of the
-            # ArUco marker
-            cX = int((topLeft[0] + bottomRight[0]) / 2.0)
-            cY = int((topLeft[1] + bottomRight[1]) / 2.0)
-            cv2.circle(frame, (cX, cY), 4, (0, 0, 255), -1)
-
-            # draw the ArUco marker ID on the frame
-            cv2.putText(frame, "  id = " + str(markerID),
-                        (topLeft[0], topLeft[1] - 15),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        1, (0, 255, 0), 3)
+        drawDetectionLines(frame, corners, ids)
+        # drawDetectionLines(masked_image, corners, ids)
 
     # show the output frame
     cv2.imshow("Frame", frame)
+    cv2.imshow("Masked Image", masked_image)
     key = cv2.waitKey(1) & 0xFF
 
     # if the `q` key was pressed, break from the loop
