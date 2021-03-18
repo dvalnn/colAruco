@@ -74,26 +74,36 @@ vs = VideoStream(src=1, resolution=(1920, 1080)).start()
 
 def mask(frame: np.ndarray, color: str, delta: int) -> np.ndarray:
 
-    # delta = 20
+    if color == "w":
+        return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
     b, g, r = frame[:, :, 0], frame[:, :, 1], frame[:, :, 2]
+
+    # if color == "w":
+    #     return b + g + r
 
     channels = {"r": r,
                 "g": g,
                 "b": b}
 
     colors = ["r", "g", "b"]
-    selected  = colors.index(color)
-    x , y, z = channels[colors[selected]], channels[colors[(selected + 1) % 3]], channels[colors[(selected + 1) % 3]]
+    selected = colors.index(color)
+    x, y, z = channels[colors[selected]], channels[colors[(
+        selected + 1) % 3]], channels[colors[(selected + 1) % 3]]
 
     zeros = np.zeros(r.shape, dtype="uint8")
 
     colorMask = (x > (y + delta)) & (x > (z + delta))
-    
+
     #  filter false positives that come up if _ + delta > 255
-    
+
     falsePositives = (y < 255 - delta) & (z < 255 - delta)
     masked_image = zeros.copy()
     masked_image[colorMask & falsePositives] = 255
+
+    if color == "g":
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (30, 30))
+        masked_image = cv2.morphologyEx(masked_image, cv2.MORPH_CLOSE, kernel)
 
     return masked_image
 
@@ -131,16 +141,18 @@ def drawDetectionLines(frame, corners, ids):
                     cv2.FONT_HERSHEY_SIMPLEX,
                     1, (0, 255, 0), 3)
 
-def input_parser()-> str:
-    allowed_colors = ["r", "g", "b"]
-    user_input = 0;
+
+def input_parser() -> str:
+    allowed_colors = ["r", "g", "b", "w"]
+    user_input = 0
     while user_input not in allowed_colors:
         try:
-            user_input = input("Input a color channel to mask (r/g/b): ")
+            user_input = input("Input a color channel to mask (r/g/b/w): ")
         except EOFError:
             print("[WARN] Invalid input")
 
     return user_input
+
 
 color = input_parser()
 # loop over the frames from the video stream
@@ -158,6 +170,7 @@ while True:
 
     masked_image = mask(frame, color, 20)
     masked_image = cv2.bilateralFilter(masked_image, 15, 75, 90)
+
     # detect ArUco markers in the input frame
     (corners, ids, rejected) = cv2.aruco.detectMarkers(
         masked_image, arucoDict, parameters=arucoParams)

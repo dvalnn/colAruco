@@ -14,7 +14,8 @@
 * PREDEFINED LED COLORS
 */
 #define OFF 0x000000                     //color black - leds are off
-#define OFFCOL(color) (0xFFFFFF - color) //?Contrasting color to facilitate code detection
+// #define OFFCOL(color) (0xFFFFFF - color) //?Contrasting color to facilitate code detection
+#define OFFCOL(color) 0x000000 
 
 /*
 * EEPROM save properties
