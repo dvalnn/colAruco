@@ -72,16 +72,26 @@ print("[INFO] starting video stream...")
 vs = VideoStream(src=1, resolution=(1920, 1080)).start()
 
 
-def mask(frame: np.ndarray) -> np.ndarray:
+def mask(frame: np.ndarray, color: str, delta: int) -> np.ndarray:
 
-    delta = 20
+    # delta = 20
     b, g, r = frame[:, :, 0], frame[:, :, 1], frame[:, :, 2]
+
+    channels = {"r": r,
+                "g": g,
+                "b": b}
+
+    colors = ["r", "g", "b"]
+    selected  = colors.index(color)
+    x , y, z = channels[colors[selected]], channels[colors[(selected + 1) % 3]], channels[colors[(selected + 1) % 3]]
 
     zeros = np.zeros(r.shape, dtype="uint8")
 
-    colorMask = (r > (g + delta)) & (r > (b + delta))
-    # filter false positives that come up if _ + delta > 255
-    falsePositives = (g < 255 - delta) & (b < 255 - delta)
+    colorMask = (x > (y + delta)) & (x > (z + delta))
+    
+    #  filter false positives that come up if _ + delta > 255
+    
+    falsePositives = (y < 255 - delta) & (z < 255 - delta)
     masked_image = zeros.copy()
     masked_image[colorMask & falsePositives] = 255
 
@@ -121,7 +131,18 @@ def drawDetectionLines(frame, corners, ids):
                     cv2.FONT_HERSHEY_SIMPLEX,
                     1, (0, 255, 0), 3)
 
+def input_parser()-> str:
+    allowed_colors = ["r", "g", "b"]
+    user_input = 0;
+    while user_input not in allowed_colors:
+        try:
+            user_input = input("Input a color channel to mask (r/g/b): ")
+        except EOFError:
+            print("[WARN] Invalid input")
 
+    return user_input
+
+color = input_parser()
 # loop over the frames from the video stream
 while True:
     # grab the frame from the threaded video stream and resize it
@@ -135,7 +156,7 @@ while True:
         print("[FATAL] camera feed not found")
         sys.exit(0)
 
-    masked_image = mask(frame)
+    masked_image = mask(frame, color, 20)
     masked_image = cv2.bilateralFilter(masked_image, 15, 75, 90)
     # detect ArUco markers in the input frame
     (corners, ids, rejected) = cv2.aruco.detectMarkers(
@@ -152,7 +173,8 @@ while True:
     cv2.imshow("Frame", frame)
     cv2.imshow("Masked Image", masked_image)
     key = cv2.waitKey(1) & 0xFF
-
+    if key == ord("i"):
+        color = input_parser()
     # if the `q` key was pressed, break from the loop
     if key == ord("q"):
         break
