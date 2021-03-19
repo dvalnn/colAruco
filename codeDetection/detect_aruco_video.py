@@ -2,59 +2,62 @@
 # python detect_aruco_video.py -t [dictType]
 
 # import the necessary packages
-from imutils.video import VideoStream
 import argparse
+
 import imutils
+from imutils.video import VideoStream
+
 import cv2
 import numpy as np
+
 import sys
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
-ap.add_argument("-t", "--type", type=str, required=True,
-                default="DICT_ARUCO_ORIGINAL",
+ap.add_argument("-t", "--type", type=str, required=False,
+                default="dict6_100",
                 help="type of ArUCo tag to detect")
 args = vars(ap.parse_args())
 
 # define names of each possible ArUco tag OpenCV supports
 ARUCO_DICT = {
-    "DICT_4X4_50": cv2.aruco.DICT_4X4_50,
-    "DICT_4X4_100": cv2.aruco.DICT_4X4_100,
-    "DICT_4X4_250": cv2.aruco.DICT_4X4_250,
-    "DICT_4X4_1000": cv2.aruco.DICT_4X4_1000,
-    "DICT_5X5_50": cv2.aruco.DICT_5X5_50,
-    "DICT_5X5_100": cv2.aruco.DICT_5X5_100,
-    "DICT_5X5_250": cv2.aruco.DICT_5X5_250,
-    "DICT_5X5_1000": cv2.aruco.DICT_5X5_1000,
-    "DICT_6X6_50": cv2.aruco.DICT_6X6_50,
-    "DICT_6X6_100": cv2.aruco.DICT_6X6_100,
-    "DICT_6X6_250": cv2.aruco.DICT_6X6_250,
-    "DICT_6X6_1000": cv2.aruco.DICT_6X6_1000,
-    # "DICT_7X7_50": cv2.aruco.DICT_7X7_50,
-    # "DICT_7X7_100": cv2.aruco.DICT_7X7_100,
-    # "DICT_7X7_250": cv2.aruco.DICT_7X7_250,
-    # "DICT_7X7_1000": cv2.aruco.DICT_7X7_1000,
-    "DICT_ARUCO_ORIGINAL": cv2.aruco.DICT_ARUCO_ORIGINAL,
+    "dict4_50": cv2.aruco.DICT_4X4_50,
+    "dict4_100": cv2.aruco.DICT_4X4_100,
+    "dict4_250": cv2.aruco.DICT_4X4_250,
+    "dict4_1000": cv2.aruco.DICT_4X4_1000,
+    "dict5_50": cv2.aruco.DICT_5X5_50,
+    "dict5_100": cv2.aruco.DICT_5X5_100,
+    "dict5_250": cv2.aruco.DICT_5X5_250,
+    "dict5_1000": cv2.aruco.DICT_5X5_1000,
+    "dict6_50": cv2.aruco.DICT_6X6_50,
+    "dict6_100": cv2.aruco.DICT_6X6_100,
+    "dict6_250": cv2.aruco.DICT_6X6_250,
+    "dict6_1000": cv2.aruco.DICT_6X6_1000,
+    # "dict7_50": cv2.aruco.DICT_7X7_50,  Not in use due to hardware limitations
+    # "dict7_100": cv2.aruco.DICT_7X7_100,
+    # "dict7_250": cv2.aruco.DICT_7X7_250,
+    # "dict7_1000": cv2.aruco.DICT_7X7_1000,
+    "original": cv2.aruco.DICT_ARUCO_ORIGINAL,
 }
 
 ARUCO_SIZES = {
-    "DICT_4X4_50":  4,
-    "DICT_4X4_100": 4,
-    "DICT_4X4_250": 4,
-    "DICT_4X4_1000": 4,
-    "DICT_5X5_50": 5,
-    "DICT_5X5_100": 5,
-    "DICT_5X5_250": 5,
-    "DICT_5X5_1000": 5,
-    "DICT_6X6_50": 6,
-    "DICT_6X6_100": 6,
-    "DICT_6X6_250": 6,
-    "DICT_6X6_1000": 6,
-    # "DICT_7X7_50": 7,
-    # "DICT_7X7_100": 7,
-    # "DICT_7X7_250": 7,
-    # "DICT_7X7_1000": 7,
-    "DICT_ARUCO_ORIGINAL": 5
+    "dict4_50":  4,
+    "dict4_100": 4,
+    "dict4_250": 4,
+    "dict4_1000": 4,
+    "dict5_50": 5,
+    "dict5_100": 5,
+    "dict5_250": 5,
+    "dict5_1000": 5,
+    "dict6_50": 6,
+    "dict6_100": 6,
+    "dict6_250": 6,
+    "dict6_1000": 6,
+    # "dict7_50": 7,
+    # "dict7_100": 7,
+    # "dict7_250": 7,
+    # "dict7_1000": 7,
+    "original": 5
 }
 
 if args["type"] not in ARUCO_DICT:
@@ -87,17 +90,18 @@ def mask(frame: np.ndarray, color: str, delta: int) -> np.ndarray:
                 "b": b}
 
     colors = ["r", "g", "b"]
+
     selected = colors.index(color)
-    x, y, z = channels[colors[selected]], channels[colors[(
+    mask_chnl, ch2, ch3 = channels[colors[selected]], channels[colors[(
         selected + 1) % 3]], channels[colors[(selected + 1) % 3]]
 
     zeros = np.zeros(r.shape, dtype="uint8")
 
-    colorMask = (x > (y + delta)) & (x > (z + delta))
+    colorMask = (mask_chnl > (ch2 + delta)) & (mask_chnl > (ch3 + delta))
 
     #  filter false positives that come up if _ + delta > 255
 
-    falsePositives = (y < 255 - delta) & (z < 255 - delta)
+    falsePositives = (ch2 < 255 - delta) & (ch3 < 255 - delta)
     masked_image = zeros.copy()
     masked_image[colorMask & falsePositives] = 255
 
