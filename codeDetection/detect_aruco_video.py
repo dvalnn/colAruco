@@ -10,7 +10,7 @@ from imutils.video import VideoStream
 import cv2
 import numpy as np
 
-import sys
+from sys import exit
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
@@ -70,7 +70,7 @@ def clrInputParser() -> str:
     return user_input
 
 
-def mask(frame: np.ndarray, color: str, delta: int) -> np.ndarray:
+def mask(frame: np.ndarray, color: str, delta: int, dilate: bool = False, kernel_size: tuple = (10, 10)) -> np.ndarray:
 
     if color == "w":
         return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -97,9 +97,10 @@ def mask(frame: np.ndarray, color: str, delta: int) -> np.ndarray:
     masked_image = zeros.copy()
     masked_image[colorMask & falsePositives] = 255
 
-    # if color == "g":
-    #     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (30, 30))
-    #     masked_image = cv2.morphologyEx(masked_image, cv2.MORPH_CLOSE, kernel)
+    if dilate:
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, kernel_size)
+        masked_image = masked_image = cv2.dilate(
+            masked_image, kernel, iterations=1)
 
     return masked_image
 
@@ -110,7 +111,7 @@ def mask(frame: np.ndarray, color: str, delta: int) -> np.ndarray:
 if args["type"] not in ARUCO_DICT:
     print("[FATAL] ArUCo tag of '{}' is not supported".format(
         args["type"]))
-    sys.exit(0)
+    exit(0)
 
 # load the ArUCo dictionary and grab the ArUCo parameters
 print("[INFO] detecting '{}' tags...".format(args["type"]))
@@ -131,12 +132,12 @@ while True:
 
     if frame is None:
         print("[FATAL] camera feed not found")
-        sys.exit(0)
+        vs.stop()
+        exit(0)
 
     frame = imutils.resize(frame, width=1000)
     masked_image = cv2.bilateralFilter(frame, 15, 75, 90)
     masked_image = mask(masked_image, color, 20)
-    # masked_image = cv2.dilate
     # detect ArUco markers in the input frame
     (corners, ids, rejected) = cv2.aruco.detectMarkers(
         masked_image, arucoDict, parameters=arucoParams)
@@ -148,6 +149,8 @@ while True:
     # show the output frame
     cv2.imshow("Frame", frame)
     cv2.imshow("Masked Image", masked_image)
+
+    ################################ input waitKeys ################################
     key = cv2.waitKey(1) & 0xFF
 
     # if the 'i' key was pressed, pause the loop and parse the color mask input
