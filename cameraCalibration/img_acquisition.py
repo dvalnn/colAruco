@@ -52,10 +52,10 @@ while True:
         imgpoints.append(corners2)
 
         # Draw and display the corners
-        key = cv2.waitKey(1) & 0xFF
-        if key == 32 or key == 13:
-            print("images found: ", counter)
+        key = cv2.waitKey(300) & 0xFF
+        if key == ord('s') or key == 13:
             counter += 1
+            print("images found: ", counter)
             cv2.imwrite(f"detectionImage{counter}.jpg", img)
 
         img = cv2.drawChessboardCorners(img, (7, 6), corners2, ret)
