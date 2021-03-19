@@ -58,15 +58,35 @@ print("[INFO] starting video stream...")
 vs = VideoStream(src=args["camera"], resolution=(1920, 1080)).start()
 
 
+def dictInputParser() -> int:
+    user_input = 0
+    while user_input not in ARUCO_DICT.keys():
+        user_input = input(
+            "Input a aruco dictionary type do detect (suported types: -h / --help): ")
+        if user_input.lower() in ["-h", "--help"]:
+            print(str(ARUCO_DICT.keys())[
+                  str(ARUCO_DICT.keys()).index("(")+1: -1])
+    return ARUCO_DICT[user_input]
+
+
+def clrInputParser() -> str:
+    allowed_colors = ["r", "g", "b", "w"]
+    user_input = 0
+    while user_input not in allowed_colors:
+        try:
+            user_input = input("Input a color channel to mask (r/g/b/w): ")
+        except EOFError:
+            print("[WARN] Invalid input")
+
+    return user_input
+
+
 def mask(frame: np.ndarray, color: str, delta: int) -> np.ndarray:
 
     if color == "w":
         return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     b, g, r = frame[:, :, 0], frame[:, :, 1], frame[:, :, 2]
-
-    # if color == "w":
-    #     return b + g + r
 
     channels = {"r": r,
                 "g": g,
@@ -129,30 +149,24 @@ def drawDetectionLines(frame, corners, ids):
                     1, (0, 255, 0), 3)
 
 
-def dict_inpt_parser() -> int:
-    user_input = 0
-    while user_input not in ARUCO_DICT.keys():
-        user_input = input(
-            "Input a aruco dictionary type do detect (suported types: -h / --help): ")
-        if user_input.lower() in ["-h", "--help"]:
-            print(str(ARUCO_DICT.keys())[str(ARUCO_DICT.keys()).index("(")+1: -1])
-    return ARUCO_DICT[user_input]
+def drawRelativePosition(frame, corners):
+    for markerCorner in corners:
+        # extract the marker corners (which are always returned
+        # in top-left, top-right, bottom-right, and bottom-left
+        # order)
+        corners = markerCorner.reshape((4, 2))
+        (topLeft, topRight, bottomRight, bottomLeft) = corners
+
+        # compute the center (x, y)-coordinates of the ArUco marker
+        # center = (int((topLeft[0] + bottomRight[0]) / 2.0) , int((topLeft[1] + bottomRight[1]) / 2.0))
+        # xx = (int((topLeft[0] + bottomRight[0])/2.0, int((topLeft[1] + bottomRight[1]) / 2.0))
+        # cv2.line(frame, center, () )
+
+    pass
 
 
-def clr_inpt_parser() -> str:
-    allowed_colors = ["r", "g", "b", "w"]
-    user_input = 0
-    while user_input not in allowed_colors:
-        try:
-            user_input = input("Input a color channel to mask (r/g/b/w): ")
-        except EOFError:
-            print("[WARN] Invalid input")
-
-    return user_input
-
-
-color = clr_inpt_parser()
-# loop over the frames from the video stream
+color = clrInputParser()
+# main code loop --- loop over the frames from the video stream
 while True:
     # grab the frame from the threaded video stream and resize it
     # to have a maximum width of 600 pixels
@@ -186,11 +200,11 @@ while True:
 
     # if the 'i' key was pressed, pause the loop and parse the color mask input
     if key == ord("d"):
-        dictType = dict_inpt_parser()
+        dictType = dictInputParser()
         arucoDict = cv2.aruco.Dictionary_get(dictType)
     # if the 'i' key was pressed, pause the loop and parse the color mask input
     if key == ord("i"):
-        color = clr_inpt_parser()
+        color = clrInputParser()
     # if the 'q' key was pressed, break from the loop
     if key == ord("q"):
         break
