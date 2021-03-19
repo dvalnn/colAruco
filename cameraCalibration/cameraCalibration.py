@@ -45,20 +45,13 @@ for fname in images:
 ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(
     objpoints, imgpoints, gray.shape[::-1], None, None)
 
-with open("calib_results.npz", "wb") as filename:
-    np.savez(filename, mtx=mtx, dist=dist, rvecs=rvecs, tvecs=tvecs)
-
-with open("calib_results.npz", "rb") as filename:
-    npzfile = np.load(filename)
-    print(npzfile.files)
-    print(npzfile["mtx"])
-
-
 img = cv2.imread(
     '/home/dvalinn/prog/colAruco/cameraCalibration/calibrationImages/detectionImage15.jpg')
 h,  w = img.shape[:2]
 newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
 
+with open("calib_results.npz", "wb") as filename:
+    np.savez(filename, mtx=mtx, dist=dist, rvecs=rvecs, tvecs=tvecs)
 
 # undistort
 dst = cv2.undistort(img, mtx, dist, None, newcameramtx)

@@ -122,6 +122,10 @@ arucoParams = cv2.aruco.DetectorParameters_create()
 print("[INFO] starting video stream...")
 vs = VideoStream(src=args["camera"], resolution=(1920, 1080)).start()
 
+with np.load("../cameraCalibration/calib_results.npz") as npzfile:
+    cameraMatrix, distCoeffs, rvecs, tvecs = [
+        npzfile[i] for i in ["mtx", "dist", "rvecs", "tvecs"]]
+
 color = clrInputParser()
 
 # main code loop --- loop over the frames from the video stream
@@ -145,6 +149,13 @@ while True:
     # verify *at least* one ArUco marker was detected
     if len(corners) > 0:
         cv2.aruco.drawDetectedMarkers(frame, corners, ids)
+        
+        rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(
+            corners, 0.022, cameraMatrix, distCoeffs)
+
+        for marker in range(len(ids)):
+            cv2.aruco.drawAxis(frame, cameraMatrix, distCoeffs,
+                               rvec[marker], tvec[marker], 0.1)
 
     # show the output frame
     cv2.imshow("Frame", frame)
