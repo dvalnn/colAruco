@@ -91,7 +91,7 @@ def mask(frame: np.ndarray, color: str, delta: int) -> np.ndarray:
     if color == "g":
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (30, 30))
         masked_image = cv2.morphologyEx(masked_image, cv2.MORPH_CLOSE, kernel)
-
+        #tentar dilate
     return masked_image
 
 

@@ -143,7 +143,7 @@ bool inputParser(uint32_t *color, uint8_t aruco[], uint8_t *size, uint8_t *brigh
     }
     if (flag.indexOf("code") >= 0)
     {
-      *size = (uint8_t)Serial.parseInt(SKIP_WHITESPACE);
+      *size = (uint8_t)Serial.parseInt(SKIP_WHITESPACE);//testar com hexadecimal
       for (short i = 0; i < *size; i++)
         aruco[i] = (uint8_t)Serial.parseInt(SKIP_WHITESPACE);
       return 1;
