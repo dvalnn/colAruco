@@ -46,6 +46,7 @@ ARUCO_DICT = {
 ###################################################################################################
 ################################## FUNCTION DECLARATION ###########################################
 
+
 def dictInputParser() -> int:
     user_input = 0
     while user_input not in ARUCO_DICT.keys():
@@ -105,6 +106,7 @@ def mask(frame: np.ndarray, color: str, delta: int) -> np.ndarray:
 ###################################################################################################
 ######################################### MAIN CODE ###############################################
 
+
 if args["type"] not in ARUCO_DICT:
     print("[FATAL] ArUCo tag of '{}' is not supported".format(
         args["type"]))
@@ -142,7 +144,6 @@ while True:
     # verify *at least* one ArUco marker was detected
     if len(corners) > 0:
         cv2.aruco.drawDetectedMarkers(frame, corners, ids)
-
 
     # show the output frame
     cv2.imshow("Frame", frame)
