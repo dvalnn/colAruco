@@ -43,20 +43,8 @@ ARUCO_DICT = {
     "original": cv2.aruco.DICT_ARUCO_ORIGINAL,
 }
 
-if args["type"] not in ARUCO_DICT:
-    print("[FATAL] ArUCo tag of '{}' is not supported".format(
-        args["type"]))
-    sys.exit(0)
-
-# load the ArUCo dictionary and grab the ArUCo parameters
-print("[INFO] detecting '{}' tags...".format(args["type"]))
-arucoDict = cv2.aruco.Dictionary_get(ARUCO_DICT[args["type"]])
-arucoParams = cv2.aruco.DetectorParameters_create()
-
-# initialize the video stream and allow the camera sensor to warm up
-print("[INFO] starting video stream...")
-vs = VideoStream(src=args["camera"], resolution=(1920, 1080)).start()
-
+###################################################################################################
+################################## FUNCTION DECLARATION ###########################################
 
 def dictInputParser() -> int:
     user_input = 0
@@ -114,23 +102,25 @@ def mask(frame: np.ndarray, color: str, delta: int) -> np.ndarray:
 
     return masked_image
 
-def drawRelativePosition(frame, corners):
-    for markerCorner in corners:
-        # extract the marker corners (which are always returned
-        # in top-left, top-right, bottom-right, and bottom-left
-        # order)
-        corners = markerCorner.reshape((4, 2))
-        (topLeft, topRight, bottomRight, bottomLeft) = corners
+###################################################################################################
+######################################### MAIN CODE ###############################################
 
-        # compute the center (x, y)-coordinates of the ArUco marker
-        # center = (int((topLeft[0] + bottomRight[0]) / 2.0) , int((topLeft[1] + bottomRight[1]) / 2.0))
-        # xx = (int((topLeft[0] + bottomRight[0])/2.0, int((topLeft[1] + bottomRight[1]) / 2.0))
-        # cv2.line(frame, center, () )
+if args["type"] not in ARUCO_DICT:
+    print("[FATAL] ArUCo tag of '{}' is not supported".format(
+        args["type"]))
+    sys.exit(0)
 
-    pass
+# load the ArUCo dictionary and grab the ArUCo parameters
+print("[INFO] detecting '{}' tags...".format(args["type"]))
+arucoDict = cv2.aruco.Dictionary_get(ARUCO_DICT[args["type"]])
+arucoParams = cv2.aruco.DetectorParameters_create()
 
+# initialize the video stream and allow the camera sensor to warm up
+print("[INFO] starting video stream...")
+vs = VideoStream(src=args["camera"], resolution=(1920, 1080)).start()
 
 color = clrInputParser()
+
 # main code loop --- loop over the frames from the video stream
 while True:
     # grab the frame from the threaded video stream and resize it
