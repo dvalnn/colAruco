@@ -14,6 +14,9 @@ import sys
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
+ap.add_argument("-c", "--camera", type=int, required=False,
+                default=0,
+                help="webcam index")
 ap.add_argument("-t", "--type", type=str, required=False,
                 default="dict6_100",
                 help="type of ArUCo tag to detect")
@@ -40,26 +43,6 @@ ARUCO_DICT = {
     "original": cv2.aruco.DICT_ARUCO_ORIGINAL,
 }
 
-ARUCO_SIZES = {
-    "dict4_50":  4,
-    "dict4_100": 4,
-    "dict4_250": 4,
-    "dict4_1000": 4,
-    "dict5_50": 5,
-    "dict5_100": 5,
-    "dict5_250": 5,
-    "dict5_1000": 5,
-    "dict6_50": 6,
-    "dict6_100": 6,
-    "dict6_250": 6,
-    "dict6_1000": 6,
-    # "dict7_50": 7,
-    # "dict7_100": 7,
-    # "dict7_250": 7,
-    # "dict7_1000": 7,
-    "original": 5
-}
-
 if args["type"] not in ARUCO_DICT:
     print("[FATAL] ArUCo tag of '{}' is not supported".format(
         args["type"]))
@@ -72,7 +55,7 @@ arucoParams = cv2.aruco.DetectorParameters_create()
 
 # initialize the video stream and allow the camera sensor to warm up
 print("[INFO] starting video stream...")
-vs = VideoStream(src=1, resolution=(1920, 1080)).start()
+vs = VideoStream(src=args["camera"], resolution=(1920, 1080)).start()
 
 
 def mask(frame: np.ndarray, color: str, delta: int) -> np.ndarray:
@@ -146,7 +129,17 @@ def drawDetectionLines(frame, corners, ids):
                     1, (0, 255, 0), 3)
 
 
-def input_parser() -> str:
+def dict_inpt_parser() -> int:
+    user_input = 0
+    while user_input not in ARUCO_DICT.keys():
+        user_input = input(
+            "Input a aruco dictionary type do detect (suported types: -h / --help): ")
+        if user_input.lower() in ["-h", "--help"]:
+            print(str(ARUCO_DICT.keys())[str(ARUCO_DICT.keys()).index("(")+1: -1])
+    return ARUCO_DICT[user_input]
+
+
+def clr_inpt_parser() -> str:
     allowed_colors = ["r", "g", "b", "w"]
     user_input = 0
     while user_input not in allowed_colors:
@@ -158,7 +151,7 @@ def input_parser() -> str:
     return user_input
 
 
-color = input_parser()
+color = clr_inpt_parser()
 # loop over the frames from the video stream
 while True:
     # grab the frame from the threaded video stream and resize it
@@ -190,9 +183,15 @@ while True:
     cv2.imshow("Frame", frame)
     cv2.imshow("Masked Image", masked_image)
     key = cv2.waitKey(1) & 0xFF
+
+    # if the 'i' key was pressed, pause the loop and parse the color mask input
+    if key == ord("d"):
+        dictType = dict_inpt_parser()
+        arucoDict = cv2.aruco.Dictionary_get(dictType)
+    # if the 'i' key was pressed, pause the loop and parse the color mask input
     if key == ord("i"):
-        color = input_parser()
-    # if the `q` key was pressed, break from the loop
+        color = clr_inpt_parser()
+    # if the 'q' key was pressed, break from the loop
     if key == ord("q"):
         break
 
