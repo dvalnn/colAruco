@@ -45,7 +45,6 @@ while True:
 
     # If found, add object points, image points (after refining them)
     if ret == True:
-        print("images found: ", counter)
         objpoints.append(objp)
 
         corners2 = cv2.cornerSubPix(
@@ -55,8 +54,10 @@ while True:
         # Draw and display the corners
         key = cv2.waitKey(1) & 0xFF
         if key == 32 or key == 13:
+            print("images found: ", counter)
             counter += 1
             cv2.imwrite(f"detectionImage{counter}.jpg", img)
+
         img = cv2.drawChessboardCorners(img, (7, 6), corners2, ret)
         cv2.imshow('FOUND', img)
 
