@@ -23,8 +23,8 @@ for fname in images:
     img = cv2.imread(fname)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    # Find the chess board corners
-    ret, corners = cv2.findChessboardCorners(gray, (7, 6), None)
+    # Find the chess board corners ---- change the value (12,7) to the size of the board you are using
+    ret, corners = cv2.findChessboardCorners(gray, (12, 7), None)
 
     # If found, add object points, image points (after refining them)
     if ret == True:
