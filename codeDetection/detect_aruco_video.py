@@ -122,10 +122,12 @@ arucoParams = cv2.aruco.DetectorParameters_create()
 print("[INFO] starting video stream...")
 vs = VideoStream(src=args["camera"], resolution=(1920, 1080)).start()
 
-with np.load("../cameraCalibration/calib_results.npz") as npzfile:
-    cameraMatrix, distCoeffs, rvecs, tvecs = [
-        npzfile[i] for i in ["mtx", "dist", "rvecs", "tvecs"]]
+# with np.load("../cameraCalibration/calib_results.npz") as npzfile:
+#     cameraMatrix, distCoeffs, rvecs, tvecs = [
+#         npzfile[i] for i in ["mtx", "dist", "rvecs", "tvecs"]]
 
+cameraMatrix = np.ndarray(shape=(3,3), buffer=np.array([874.7624752186383, 0, 282.6009074642533, 0, 874.5379489806799, 218.1223179333145, 0, 0, 1]))
+distCoeffs = np.ndarray(shape=(1,5), buffer=np.array([0.05363329676093317, 0.3372325263081464, -0.005382727611648226, -0.02717982394149372, 0]))
 color = clrInputParser()
 
 # main code loop --- loop over the frames from the video stream
@@ -151,12 +153,12 @@ while True:
     if len(corners) > 0:
         cv2.aruco.drawDetectedMarkers(frame, corners, ids)
 
-        # for i in range(len(ids)):
-        #     rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(
-        #         corners[i], 0.02, cameraMatrix, distCoeffs)
-        #     (rvec - tvec).any()
-        #     cv2.aruco.drawAxis(frame, cameraMatrix, distCoeffs,
-        #                        rvec, tvec, 0.01)
+        for i in range(len(ids)):
+            rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(
+                corners[i], 0.02, cameraMatrix, distCoeffs)
+            (rvec - tvec).any()
+            cv2.aruco.drawAxis(frame, cameraMatrix, distCoeffs,
+                               rvec, tvec, 0.01)
 
     # show the output frame
     cv2.imshow("Frame", frame)
