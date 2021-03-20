@@ -144,18 +144,19 @@ while True:
     masked_image = mask(masked_image, color, 20)
     # detect ArUco markers in the input frame
     (corners, ids, rejected) = cv2.aruco.detectMarkers(
-        masked_image, arucoDict, parameters=arucoParams)
+        masked_image, arucoDict, parameters=arucoParams, cameraMatrix=cameraMatrix, distCoeff=distCoeffs)
 
+    # ,cameraMatrix=cameraMatrix, distCoeff=distCoeffs
     # verify *at least* one ArUco marker was detected
     if len(corners) > 0:
         cv2.aruco.drawDetectedMarkers(frame, corners, ids)
-        
-        rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(
-            corners, 0.022, cameraMatrix, distCoeffs)
 
-        for marker in range(len(ids)):
-            cv2.aruco.drawAxis(frame, cameraMatrix, distCoeffs,
-                               rvec[marker], tvec[marker], 0.1)
+        # for i in range(len(ids)):
+        #     rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(
+        #         corners[i], 0.02, cameraMatrix, distCoeffs)
+        #     (rvec - tvec).any()
+        #     cv2.aruco.drawAxis(frame, cameraMatrix, distCoeffs,
+        #                        rvec, tvec, 0.01)
 
     # show the output frame
     cv2.imshow("Frame", frame)

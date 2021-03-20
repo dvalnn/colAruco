@@ -20,11 +20,12 @@ images = glob.glob(
 counter = 0
 
 for fname in images:
+
     img = cv2.imread(fname)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    # Find the chess board corners ---- change the value (12,7) to the size of the board you are using
-    ret, corners = cv2.findChessboardCorners(gray, (12, 7), None)
+    # Find the chess board corners ---- change the value (7,6) to the size of the board you are using
+    ret, corners = cv2.findChessboardCorners(gray, (7, 6), None)
 
     # If found, add object points, image points (after refining them)
     if ret == True:
@@ -46,7 +47,7 @@ ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(
     objpoints, imgpoints, gray.shape[::-1], None, None)
 
 img = cv2.imread(
-    '/home/dvalinn/prog/colAruco/cameraCalibration/calibrationImages/detectionImage15.jpg')
+    '/home/dvalinn/prog/colAruco/cameraCalibration/calibrationImages/detectionImage1.jpg')
 h,  w = img.shape[:2]
 newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
 

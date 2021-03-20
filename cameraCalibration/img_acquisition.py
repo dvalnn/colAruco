@@ -41,7 +41,7 @@ while True:
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     # Find the chess board corners
-    ret, corners = cv2.findChessboardCorners(gray, (12, 7), None)
+    ret, corners = cv2.findChessboardCorners(gray, (7, 6), None)
 
     # If found, add object points, image points (after refining them)
     if ret == True:
