@@ -104,7 +104,7 @@ def main():
         loop_start = time()
 
         # waiting on arduino response
-        print("[INFO] Waiting for arduino response")
+        print("\n[INFO] Waiting for arduino response")
         while True:
             serial_out = arduino_read()
             serial_out = [string.strip("\\n\\rb'") for string in serial_out]
@@ -131,7 +131,7 @@ def main():
                 break
             else:
                 print(
-                    "[INFO] Input carries no meaning, arduino will not be updated")
+                    "\n[INFO] Input carries no meaning, arduino will not be updated\n")
 
 
 ###################################################################################################
