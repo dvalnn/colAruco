@@ -1,3 +1,4 @@
 /cameraCalibration/calibrationImages
 *.png
 *.npz
+.vscode
