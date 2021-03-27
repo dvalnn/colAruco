@@ -4,35 +4,9 @@ import argparse
 from sys import exit
 from time import time
 
-ap = argparse.ArgumentParser()
-ap.add_argument("-p", "--port",
-                default="/dev/ttyACM0",
-                help="Serial port to attempt arduino connection - defaults to /dev/ttyACM0")
+###################################################################################################
+################################## FUNCTION DECLARATION ###########################################
 
-args = vars(ap.parse_args())
-
-try:
-    arduino = serial.Serial(port=args["port"], baudrate=9600, timeout=.1)
-except:
-    print("\n[FATAL] Couldn't establish serial connection on port", args["port"])
-    exit(0)
-else:
-    print("\n[INFO] Arduino connection successfull")
-
-PREDEFINED_COLORS = {
-    "r": "FF0000",
-    "g": "00FF00",
-    "b": "0000FF",
-    "w": "FFFFFF",
-}
-
-ARUCO_DICT = {
-    "dict4": "4",
-    "dict5": "5",
-    "dict6": "6",
-    # "dict7": "7",
-    "dict_or": "0",
-}
 
 def arduino_write(serial_in: str):
     arduino.write(bytes(serial_in, 'utf-8'))
@@ -118,35 +92,76 @@ def input_parser(text: str) -> tuple:
     return (flag, formated_input)
 
 
-# main loop
-while True:
-    loop_start = time()
+###################################################################################################
+########################################### MAIN ##################################################
 
-    # waiting on arduino response
-    print("\n[INFO] Waiting for arduino response\n")
+
+def main():
+    # main loop
     while True:
-        serial_out = arduino_read()
-        serial_out = [string.strip("\\n\\rb'") for string in serial_out]
+        loop_start = time()
 
-        if len(serial_out) != 0 and serial_out[2][-1] != "0":
-            break
+        # waiting on arduino response
+        print("\n[INFO] Waiting for arduino response\n")
+        while True:
+            serial_out = arduino_read()
+            serial_out = [string.strip("\\n\\rb'") for string in serial_out]
 
-        if time() - loop_start >= 3:  # times out so that the code doesn't get stuck waiting for a response
-            break
+            if len(serial_out) != 0 and serial_out[2][-1] != "0":
+                break
 
-    for element in serial_out:
-        print(element)  # printing out arduino response
-    print("-------------------------------------------------------")
-    print()
+            if time() - loop_start >= 3:  # times out so that the code doesn't get stuck waiting for a response
+                break
 
-    while True:
-        text = input("User input: ").lower()  # Taking input from user
-        if not len(text):
-            continue
-        flag, formated_input = input_parser(text)
+        for element in serial_out:
+            print(element)  # printing out arduino response
+        print("-------------------------------------------------------")
+        print()
 
-        if len(flag):
-            arduino_write(flag + " " + formated_input)
-            break
-        else:
-            print("[INFO] Input carries no meaning, arduino will not be updated\n")
+        while True:
+            text = input("User input: ").lower()  # Taking input from user
+            if not len(text):
+                continue
+            flag, formated_input = input_parser(text)
+
+            if len(flag):
+                arduino_write(flag + " " + formated_input)
+                break
+            else:
+                print(
+                    "[INFO] Input carries no meaning, arduino will not be updated\n")
+
+
+###################################################################################################
+######################################## DRIVER CODE ##############################################
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-p", "--port",
+                    default="/dev/ttyACM0",
+                    help="Serial port to attempt arduino connection - defaults to /dev/ttyACM0")
+
+    args = vars(ap.parse_args())
+
+    try:
+        arduino = serial.Serial(port=args["port"], baudrate=9600, timeout=.1)
+    except:
+        print("\n[FATAL] Couldn't establish serial connection on port", args["port"])
+        exit(0)
+    else:
+        print("\n[INFO] Arduino connection successfull")
+
+    PREDEFINED_COLORS = {
+        "r": "FF0000",
+        "g": "00FF00",
+        "b": "0000FF",
+        "w": "FFFFFF",
+    }
+
+    ARUCO_DICT = {
+        "dict4": "4",
+        "dict5": "5",
+        "dict6": "6",
+        # "dict7": "7",
+        "dict_or": "0",
+    }
