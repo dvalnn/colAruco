@@ -106,6 +106,8 @@ def main(args):
         [0.05363329676093317, 0.3372325263081464, -0.005382727611648226, -0.02717982394149372, 0]))
     color = clrInputParser()
 
+    verbose = False # flag to toggle marker info printing 
+
     # main code loop --- loop over the frames from the video stream
     while True:
         # grab the frame from the threaded video stream and resize it
@@ -135,7 +137,12 @@ def main(args):
                 (rvec - tvec).any()
                 cv2.aruco.drawAxis(frame, cameraMatrix, distCoeffs,
                                    rvec, tvec, 0.01)
-
+            if(verbose):
+                print(f"Aruco Marker id: {ids[i]}")
+                print(
+                    f"\trotation vector: [{rvec[ 0, 0, 0]} {rvec[ 0, 0, 1]} {rvec[ 0, 0, 2]}]")
+                print(
+                    f"\ttranslation vector: [{tvec[ 0, 0, 0]} {tvec[ 0, 0, 1]} {tvec[ 0, 0, 2]}]")
         # show the output frame
         cv2.imshow("Frame", frame)
         cv2.imshow("Masked Image", masked_image)
@@ -150,6 +157,8 @@ def main(args):
         # if the 'i' key was pressed, pause the loop and parse the color mask input
         if key == ord("i"):
             color = clrInputParser()
+        if key == ord("p"):
+            verbose = verbose != True
         # if the 'q' key was pressed, break from the loop
         if key == ord("q"):
             break
