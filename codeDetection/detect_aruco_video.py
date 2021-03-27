@@ -12,36 +12,6 @@ import numpy as np
 
 from sys import exit
 
-# construct the argument parser and parse the arguments
-ap = argparse.ArgumentParser()
-ap.add_argument("-c", "--camera", type=int, required=False,
-                default=0,
-                help="webcam index")
-ap.add_argument("-t", "--type", type=str, required=False,
-                default="dict6_100",
-                help="type of ArUCo tag to detect")
-args = vars(ap.parse_args())
-
-# define names of each possible ArUco tag OpenCV supports
-ARUCO_DICT = {
-    "dict4_50": cv2.aruco.DICT_4X4_50,
-    "dict4_100": cv2.aruco.DICT_4X4_100,
-    "dict4_250": cv2.aruco.DICT_4X4_250,
-    "dict4_1000": cv2.aruco.DICT_4X4_1000,
-    "dict5_50": cv2.aruco.DICT_5X5_50,
-    "dict5_100": cv2.aruco.DICT_5X5_100,
-    "dict5_250": cv2.aruco.DICT_5X5_250,
-    "dict5_1000": cv2.aruco.DICT_5X5_1000,
-    "dict6_50": cv2.aruco.DICT_6X6_50,
-    "dict6_100": cv2.aruco.DICT_6X6_100,
-    "dict6_250": cv2.aruco.DICT_6X6_250,
-    "dict6_1000": cv2.aruco.DICT_6X6_1000,
-    # "dict7_50": cv2.aruco.DICT_7X7_50,  Not in use due to hardware limitations
-    # "dict7_100": cv2.aruco.DICT_7X7_100,
-    # "dict7_250": cv2.aruco.DICT_7X7_250,
-    # "dict7_1000": cv2.aruco.DICT_7X7_1000,
-    "original": cv2.aruco.DICT_ARUCO_ORIGINAL,
-}
 
 ###################################################################################################
 ################################## FUNCTION DECLARATION ###########################################
@@ -104,80 +74,121 @@ def mask(frame: np.ndarray, color: str, delta: int, dilate: bool = False, kernel
 
     return masked_image
 
+
 ###################################################################################################
 ######################################### MAIN CODE ###############################################
 
 
-if args["type"] not in ARUCO_DICT:
-    print("[FATAL] ArUCo tag of '{}' is not supported".format(
-        args["type"]))
-    exit(0)
-
-# load the ArUCo dictionary and grab the ArUCo parameters
-print("[INFO] detecting '{}' tags...".format(args["type"]))
-arucoDict = cv2.aruco.Dictionary_get(ARUCO_DICT[args["type"]])
-arucoParams = cv2.aruco.DetectorParameters_create()
-
-# initialize the video stream and allow the camera sensor to warm up
-print("[INFO] starting video stream...")
-vs = VideoStream(src=args["camera"], resolution=(1920, 1080)).start()
-
-# with np.load("../cameraCalibration/calib_results.npz") as npzfile:
-#     cameraMatrix, distCoeffs, rvecs, tvecs = [
-#         npzfile[i] for i in ["mtx", "dist", "rvecs", "tvecs"]]
-
-cameraMatrix = np.ndarray(shape=(3,3), buffer=np.array([874.7624752186383, 0, 282.6009074642533, 0, 874.5379489806799, 218.1223179333145, 0, 0, 1]))
-distCoeffs = np.ndarray(shape=(1,5), buffer=np.array([0.05363329676093317, 0.3372325263081464, -0.005382727611648226, -0.02717982394149372, 0]))
-color = clrInputParser()
-
-# main code loop --- loop over the frames from the video stream
-while True:
-    # grab the frame from the threaded video stream and resize it
-    # to have a maximum width of 600 pixels
-    frame = vs.read()
-
-    if frame is None:
-        print("[FATAL] camera feed not found")
-        vs.stop()
+def MAIN(args):
+    if args["type"] not in ARUCO_DICT:
+        print("[FATAL] ArUCo tag of '{}' is not supported".format(
+            args["type"]))
         exit(0)
 
-    frame = imutils.resize(frame, width=1000)
-    masked_image = cv2.bilateralFilter(frame, 15, 75, 90)
-    masked_image = mask(masked_image, color, 20)
-    # detect ArUco markers in the input frame
-    (corners, ids, rejected) = cv2.aruco.detectMarkers(
-        masked_image, arucoDict, parameters=arucoParams, cameraMatrix=cameraMatrix, distCoeff=distCoeffs)
+    # load the ArUCo dictionary and grab the ArUCo parameters
+    print("[INFO] detecting '{}' tags...".format(args["type"]))
+    arucoDict = cv2.aruco.Dictionary_get(ARUCO_DICT[args["type"]])
+    arucoParams = cv2.aruco.DetectorParameters_create()
 
-    # ,cameraMatrix=cameraMatrix, distCoeff=distCoeffs
-    # verify *at least* one ArUco marker was detected
-    if len(corners) > 0:
-        cv2.aruco.drawDetectedMarkers(frame, corners, ids)
+    # initialize the video stream and allow the camera sensor to warm up
+    print("[INFO] starting video stream...")
+    vs = VideoStream(src=args["camera"], resolution=(1920, 1080)).start()
 
-        for i in range(len(ids)):
-            rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(
-                corners[i], 0.02, cameraMatrix, distCoeffs)
-            (rvec - tvec).any()
-            cv2.aruco.drawAxis(frame, cameraMatrix, distCoeffs,
-                               rvec, tvec, 0.01)
+    # with np.load("../cameraCalibration/calib_results.npz") as npzfile:
+    #     cameraMatrix, distCoeffs, rvecs, tvecs = [
+    #         npzfile[i] for i in ["mtx", "dist", "rvecs", "tvecs"]]
 
-    # show the output frame
-    cv2.imshow("Frame", frame)
-    cv2.imshow("Masked Image", masked_image)
+    cameraMatrix = np.ndarray(shape=(3, 3), buffer=np.array(
+        [874.7624752186383, 0, 282.6009074642533, 0, 874.5379489806799, 218.1223179333145, 0, 0, 1]))
+    distCoeffs = np.ndarray(shape=(1, 5), buffer=np.array(
+        [0.05363329676093317, 0.3372325263081464, -0.005382727611648226, -0.02717982394149372, 0]))
+    color = clrInputParser()
 
-    ################################ input waitKeys ################################
-    key = cv2.waitKey(1) & 0xFF
+    # main code loop --- loop over the frames from the video stream
+    while True:
+        # grab the frame from the threaded video stream and resize it
+        # to have a maximum width of 600 pixels
+        frame = vs.read()
 
-    # if the 'i' key was pressed, pause the loop and parse the color mask input
-    if key == ord("d"):
-        dictType = dictInputParser()
-        arucoDict = cv2.aruco.Dictionary_get(dictType)
-    # if the 'i' key was pressed, pause the loop and parse the color mask input
-    if key == ord("i"):
-        color = clrInputParser()
-    # if the 'q' key was pressed, break from the loop
-    if key == ord("q"):
-        break
+        if frame is None:
+            print("[FATAL] camera feed not found")
+            vs.stop()
+            exit(0)
 
-# do a bit of cleanup
-cv2.destroyAllWindows()
-vs.stop()
+        frame = imutils.resize(frame, width=1000)
+        masked_image = cv2.bilateralFilter(frame, 15, 75, 90)
+        masked_image = mask(masked_image, color, 20)
+        # detect ArUco markers in the input frame
+        (corners, ids, rejected) = cv2.aruco.detectMarkers(
+            masked_image, arucoDict, parameters=arucoParams, cameraMatrix=cameraMatrix, distCoeff=distCoeffs)
+
+        # ,cameraMatrix=cameraMatrix, distCoeff=distCoeffs
+        # verify *at least* one ArUco marker was detected
+        if len(corners) > 0:
+            cv2.aruco.drawDetectedMarkers(frame, corners, ids)
+
+            for i in range(len(ids)):
+                rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(
+                    corners[i], 0.02, cameraMatrix, distCoeffs)
+                (rvec - tvec).any()
+                cv2.aruco.drawAxis(frame, cameraMatrix, distCoeffs,
+                                   rvec, tvec, 0.01)
+
+        # show the output frame
+        cv2.imshow("Frame", frame)
+        cv2.imshow("Masked Image", masked_image)
+
+        ################################ input waitKeys ################################
+        key = cv2.waitKey(1) & 0xFF
+
+        # if the 'i' key was pressed, pause the loop and parse the color mask input
+        if key == ord("d"):
+            dictType = dictInputParser()
+            arucoDict = cv2.aruco.Dictionary_get(dictType)
+        # if the 'i' key was pressed, pause the loop and parse the color mask input
+        if key == ord("i"):
+            color = clrInputParser()
+        # if the 'q' key was pressed, break from the loop
+        if key == ord("q"):
+            break
+
+    # do a bit of cleanup
+    cv2.destroyAllWindows()
+    vs.stop()
+
+
+###################################################################################################
+######################################## DRIVER CODE ##############################################
+
+
+if __name__ == "__main__":
+    # construct the argument parser and parse the arguments
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-c", "--camera", type=int, required=False,
+                    default=0,
+                    help="webcam index")
+    ap.add_argument("-t", "--type", type=str, required=False,
+                    default="dict6_100",
+                    help="type of ArUCo tag to detect")
+    args = vars(ap.parse_args())
+
+    # define names of each possible ArUco tag OpenCV supports
+    ARUCO_DICT = {
+        "dict4_50": cv2.aruco.DICT_4X4_50,
+        "dict4_100": cv2.aruco.DICT_4X4_100,
+        "dict4_250": cv2.aruco.DICT_4X4_250,
+        "dict4_1000": cv2.aruco.DICT_4X4_1000,
+        "dict5_50": cv2.aruco.DICT_5X5_50,
+        "dict5_100": cv2.aruco.DICT_5X5_100,
+        "dict5_250": cv2.aruco.DICT_5X5_250,
+        "dict5_1000": cv2.aruco.DICT_5X5_1000,
+        "dict6_50": cv2.aruco.DICT_6X6_50,
+        "dict6_100": cv2.aruco.DICT_6X6_100,
+        "dict6_250": cv2.aruco.DICT_6X6_250,
+        "dict6_1000": cv2.aruco.DICT_6X6_1000,
+        # "dict7_50": cv2.aruco.DICT_7X7_50,  Not in use due to hardware limitations
+        # "dict7_100": cv2.aruco.DICT_7X7_100,
+        # "dict7_250": cv2.aruco.DICT_7X7_250,
+        # "dict7_1000": cv2.aruco.DICT_7X7_1000,
+        "original": cv2.aruco.DICT_ARUCO_ORIGINAL,
+    }
