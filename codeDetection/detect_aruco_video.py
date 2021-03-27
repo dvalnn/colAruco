@@ -1,3 +1,5 @@
+#!/usr/bin/python3.8
+
 # USAGE
 # python detect_aruco_video.py -t [dictType]
 
