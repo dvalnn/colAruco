@@ -1,3 +1,5 @@
+#!/usr/bin/python3.8
+
 import serial
 import subprocess
 import argparse
