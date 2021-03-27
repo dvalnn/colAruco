@@ -81,7 +81,7 @@ def mask(frame: np.ndarray, color: str, delta: int, dilate: bool = False, kernel
 ######################################### MAIN CODE ###############################################
 
 
-def MAIN(args):
+def main(args):
     if args["type"] not in ARUCO_DICT:
         print("[FATAL] ArUCo tag of '{}' is not supported".format(
             args["type"]))
@@ -194,3 +194,5 @@ if __name__ == "__main__":
         # "dict7_1000": cv2.aruco.DICT_7X7_1000,
         "original": cv2.aruco.DICT_ARUCO_ORIGINAL,
     }
+
+    main(args)

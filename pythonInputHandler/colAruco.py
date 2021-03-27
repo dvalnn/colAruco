@@ -104,7 +104,7 @@ def main():
         loop_start = time()
 
         # waiting on arduino response
-        print("\n[INFO] Waiting for arduino response\n")
+        print("[INFO] Waiting for arduino response")
         while True:
             serial_out = arduino_read()
             serial_out = [string.strip("\\n\\rb'") for string in serial_out]
@@ -131,7 +131,7 @@ def main():
                 break
             else:
                 print(
-                    "[INFO] Input carries no meaning, arduino will not be updated\n")
+                    "[INFO] Input carries no meaning, arduino will not be updated")
 
 
 ###################################################################################################
@@ -148,10 +148,10 @@ if __name__ == "__main__":
     try:
         arduino = serial.Serial(port=args["port"], baudrate=9600, timeout=.1)
     except:
-        print("\n[FATAL] Couldn't establish serial connection on port", args["port"])
+        print("[FATAL] Couldn't establish serial connection on port", args["port"])
         exit(0)
     else:
-        print("\n[INFO] Arduino connection successfull")
+        print("[INFO] Arduino connection successfull")
 
     PREDEFINED_COLORS = {
         "r": "FF0000",
@@ -167,3 +167,5 @@ if __name__ == "__main__":
         # "dict7": "7",
         "dict_or": "0",
     }
+
+    main()
