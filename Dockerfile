@@ -42,6 +42,7 @@ RUN HOME=/home/ros
 
 RUN /bin/bash -c '. /opt/ros/melodic/setup.bash; catkin_init_workspace /home/ros/workspace/src'
 RUN /bin/bash -c '. /opt/ros/melodic/setup.bash; cd /home/ros/workspace; catkin_make'
+RUN /bin/bash -c 'cd /home/ros/workspace; source ./devel/setup.bash'
 ADD .bashrc \~/
 
 
