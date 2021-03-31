@@ -2,3 +2,4 @@
 *.png
 *.npz
 .vscode
+*.tar.gz
