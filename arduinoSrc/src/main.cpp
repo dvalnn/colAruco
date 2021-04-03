@@ -44,7 +44,6 @@ void loadFromEEPROM(uint8_t aruco[], uint8_t *size, uint8_t *brightness, uint32_
 void saveToEEPROM(uint8_t aruco[], uint8_t size, uint8_t brightness, uint32_t color);
 
 int addBorder(uint8_t arcode[], int size, int withBorder[]);
-int fillWith1(int size);
 
 //* setup code
 void setup()
@@ -304,14 +303,24 @@ void loadFromEEPROM(uint8_t aruco[], uint8_t *size, uint8_t *brightness, uint32_
   EEPROM.get(slot * SAVE_SIZE + 8, *brightness);
   EEPROM.get(slot * SAVE_SIZE + 9, *color);
 }
-
+/**
+ * @brief pads aruco code with an appropriate border
+ * 
+ * @param arcode input code
+ * @param size input code size
+ * @param withBorder returned code with border
+ * @return int size of code with border
+ */
 int addBorder(uint8_t arcode[], int size, int withBorder[])
 {
     size += 4;
 
     //primeira e última filas preenchidas com 1 em todas as posições
-    withBorder[0] = fillWith1(size);
-    withBorder[size - 1] = fillWith1(size);
+    int borderVal = pow(2, size);
+    withBorder[0] = borderVal;
+    withBorder[size - 1] = borderVal;
+    // withBorder[0] = fillWith1(size);
+    // withBorder[size - 1] = fillWith1(size);
     //segunda e penúltima filas preenchidas com 10..(0)..01
     withBorder[1] = BIT(size - 1) + 1;
     withBorder[size - 2] = BIT(size - 1) + 1;
@@ -321,12 +330,4 @@ int addBorder(uint8_t arcode[], int size, int withBorder[])
         withBorder[i] += (BIT(size - 1) + (arcode[i - 2] << 2) + 1);
         
     return size;
-}
-
-int fillWith1(int size)
-{
-    int value = 0;
-    for (int i = 0; i < size; i++)
-        value += BIT(i);
-    return value;
 }
