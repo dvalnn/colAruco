@@ -1,11 +1,12 @@
 {
 	"folders": [
 		{
-			"path": "."
-		},
-		{
 			"name": "arduinoSrc",
 			"path": "arduinoSrc"
+		},
+		{
+			"name": "colAruco",
+			"path": "."
 		}
 	],
 	"settings": {}
