@@ -6,6 +6,7 @@ import argparse
 from sys import exit
 from time import time
 
+
 ###################################################################################################
 ################################## FUNCTION DECLARATION ###########################################
 
@@ -29,16 +30,10 @@ def fetch_aruco(id: str, size: str) -> str:
     )
     return completed_process.stdout.strip("\n").strip()
 
-def man(tag="default"):
-    if tag == "default":
-        pass
-    elif tag == "cl":
-        pass
-    elif tag == "br":
-        pass
-    elif tag == "code":
-        pass
-    
+def man():
+    with open("colAruco_manual.txt", "r") as man:
+        print("\n" + man.read() + "\n")
+
 def input_parser(usr_input: list) -> tuple:
     #text input is always lowercase
     error = False
@@ -94,7 +89,7 @@ def input_parser(usr_input: list) -> tuple:
             id = int(usr_input[usr_input.index("code") + 1])
             dict_type = usr_input[usr_input.index("code") + 2]
         except IndexError:
-            print("[ERROR] Invalid code input - values not found")
+            print("[ERROR] Invalid code input")
         else:
             if id in range(0, 1000) and dict_type in ARUCO_DICT.keys():
                 error = False
@@ -148,7 +143,7 @@ def main(arduino: serial.Serial):
                 arduino.close()
                 exit(0)
             
-            if '-h' in text or '--help' in text:
+            if any(string in text for string in ['-h', '--help', 'man']):
                 man()
                 continue
 
@@ -159,7 +154,7 @@ def main(arduino: serial.Serial):
                 arduino_write(input_flag + " " + formated_input)
                 break
             elif error:
-                print("\033[2F", end="\033[K") #cursor 2 lines up and clear line
+                print("\033[3F", end="\033[K") #cursor 2 lines up and clear line
                 pass
             else:
                 print("[INFO] Input carries no meaning, arduino will not be updated", end="\033[F\033[K")

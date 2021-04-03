@@ -1,0 +1,53 @@
+------------------------------------ colAruco Manual ------------------------------------
+
+[INFO] All commands are case insensitive.
+
+Available commands: 
+
+--- Saving/loading settings:
+
+    <save> - Save current settings to arduino on board memory (EEPROM storage). 
+        
+            - Saved settings are automatically loaded on startup by the board.
+        
+            - Only one profile is stored at a time. A new save rewrites previously 
+                stored settings
+
+    <load> - Load previously saved setting from on board memory.
+
+--- Led/Code controls:
+
+    <br> <brightness_value> - change led brightness:
+
+                            <brightness_value> must be within [0, 255] range
+                            
+                            -usage example: br 100
+
+    <cl> <color_value> - change led color:
+
+                        <color_value> must be either 32bit hex color code or 
+                                        one of the predefined values: 
+                                        - <w> for white
+                                        - <r> for red
+                                        - <g> for green
+                                        - <b> for blue
+                        
+                        - usage examples: cl w
+                                          cl ff12ea
+
+    <code> <id> <family> - change aruco code on display:
+
+                         <id> must be within [0, 999] range
+
+                         <family> must be on of the aruco dictionaries:
+                                  - <dict4> for 4x4 codes
+                                  - <dict5> for 5x5 codes
+                                  - <dict6> for 6x6 codes
+
+                                  - <dict_or> for the original 5x5 codes
+
+                                [INFO] 7x7 codes are currently not supported.
+                    
+                        - usage example: code 123 dict6
+                        
+------------------------------------ colAruco Manual ------------------------------------
