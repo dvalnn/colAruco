@@ -1,4 +1,4 @@
-#!/usr/bin/python3.8
+#!/usr/bin/python3
 
 import serial
 import subprocess
@@ -23,59 +23,73 @@ def arduino_read():
 def fetch_aruco(id: str, size: str) -> str:
 
     completed_process = subprocess.run(
-        ["../arucoCodeGen/arucoDictTranslator", id, size], capture_output=True, text=True)
+        ["../arucoCodeGen/arucoDictTranslator", id, size], 
+        capture_output=True, 
+        text=True
+    )
     return completed_process.stdout.strip("\n").strip()
 
-
-def input_parser(text: str) -> tuple:
-    flag = ""
-    usr_input = text.strip().split()
+def man(tag="default"):
+    if tag == "default":
+        pass
+    elif tag == "cl":
+        pass
+    elif tag == "br":
+        pass
+    elif tag == "code":
+        pass
+    
+def input_parser(usr_input: list) -> tuple:
+    #text input is always lowercase
+    error = False
+    input_flag = ""
     formated_input = ""
 
-    if "exit" in usr_input:
-        exit(0)
-
     if "save" in usr_input:
-        flag = "save"
+        input_flag = "save"
 
     elif "load" in usr_input:
-        flag = "load"
+        input_flag = "load"
 
     elif "br" in usr_input:
+        error = True
         try:
             tmp = int(usr_input[usr_input.index("br") + 1])
         except ValueError:
-            print("\n[WARNING] invalid brightness input - not integer value\n")
+            print("[ERROR] invalid brightness input - not integer value")
         except IndexError:
-            print("\n[ERROR] invalid brightness input - value not found\n")
+            print("[ERROR] invalid brightness input - value not found")
         else:
             if tmp in range(0, 256):
-                flag = "br"
+                error = False
+                input_flag = "br"
                 formated_input += (str(tmp) + " ")
             else:
-                print(
-                    "\n[ERROR] brightness input is outside the accepted range (0-255)\n")
+                print("[ERROR] brightness input is outside the accepted range (0-255)")
 
     elif "cl" in usr_input:
+        error = True
         try:
             tmp = usr_input[usr_input.index("cl") + 1]
         except IndexError:
-            print("\n[ERROR] invalid color input - color value not found\n")
+            print("[ERROR] invalid color input - color value not found")
         else:
             if tmp in PREDEFINED_COLORS.keys():
-                flag = "cl"
+                error = False
+                input_flag = "cl"
                 formated_input += (PREDEFINED_COLORS[tmp] + " ")
             else:
                 try:
                     int(tmp, 16)
                 except ValueError:
-                    print(
-                        "\n[WARNING] invalid color input - not hex or predefined\n")
+                    print("[ERROR] invalid color input - not hex or predefined")
                 else:
-                    flag = "cl"
+                    error = False
+                    input_flag = "cl"
                     formated_input += (tmp + " ")
 
     elif "code" in usr_input:
+        error = True
         try:
             id = int(usr_input[usr_input.index("code") + 1])
             dict_type = usr_input[usr_input.index("code") + 2]
@@ -83,22 +97,20 @@ def input_parser(text: str) -> tuple:
             print("[ERROR] Invalid code input - values not found")
         else:
             if id in range(0, 1000) and dict_type in ARUCO_DICT.keys():
-                flag = "code"
+                error = False
+                input_flag = "code"
                 formated_input += fetch_aruco(str(id), ARUCO_DICT[dict_type])
             else:
-                print("\n[ERROR] Invalid code input\n")
+                print("[ERROR] Invalid code input")
 
-    print("flag:", flag)
-    print("formated arduino input:", formated_input)
-
-    return (flag, formated_input)
+    return (error, input_flag, formated_input)
 
 
 ###################################################################################################
 ########################################### MAIN ##################################################
 
 
-def main():
+def main(arduino: serial.Serial):
     # main loop
     while True:
         loop_start = time()
@@ -107,7 +119,7 @@ def main():
         print("\n[INFO] Waiting for arduino response")
         while True:
             serial_out = arduino_read()
-            serial_out = [string.strip("\\n\\rb'") for string in serial_out]
+            serial_out = [string.strip("\\n\\rb'") for string in serial_out] #remove attached noise and tags that serial out outputs
 
             if len(serial_out) != 0 and serial_out[2][-1] != "0":
                 break
@@ -117,22 +129,40 @@ def main():
 
         for element in serial_out:
             print(element)  # printing out arduino response
-        print("-------------------------------------------------------")
-        print()
+        print("-------------------------------------------------------\n")
 
         while True:
-            text = input("User input: ").lower()  # Taking input from user
+            try:
+                text = input("User input: ").lower().strip("\n").strip().split()  # Taking input from user
+            except EOFError:
+                arduino.close()
+                exit(0)
+
             if not len(text):
+                print("\033[F\033[K", end="") #cursor up one line and clear it to the end
                 continue
-            flag, formated_input = input_parser(text)
 
-            if len(flag):
-                arduino_write(flag + " " + formated_input)
+            if 'exit'in text or 'q' in text:
+                print("\033[F\033[K", end="")
+                print("[INFO] closing serial connection")
+                arduino.close()
+                exit(0)
+            
+            if '-h' in text or '--help' in text:
+                man()
+                continue
+
+            print("", end="\033[K")
+            error, input_flag, formated_input = input_parser(text)
+
+            if len(input_flag):
+                arduino_write(input_flag + " " + formated_input)
                 break
+            elif error:
+                print("\033[2F", end="\033[K") #cursor 2 lines up and clear line
+                pass
             else:
-                print(
-                    "\n[INFO] Input carries no meaning, arduino will not be updated\n")
-
+                print("[INFO] Input carries no meaning, arduino will not be updated", end="\033[F\033[K")
 
 ###################################################################################################
 ######################################## DRIVER CODE ##############################################
@@ -148,10 +178,10 @@ if __name__ == "__main__":
     try:
         arduino = serial.Serial(port=args["port"], baudrate=9600, timeout=.1)
     except:
-        print("[FATAL] Couldn't establish serial connection on port", args["port"])
+        print("\n[FATAL] Couldn't establish serial connection on port", args["port"])
         exit(0)
     else:
-        print("[INFO] Arduino connection successfull")
+        print("\n[INFO] Arduino connection successfull")
 
     PREDEFINED_COLORS = {
         "r": "FF0000",
@@ -168,4 +198,4 @@ if __name__ == "__main__":
         "dict_or": "0",
     }
 
-    main()
+    main(arduino)
