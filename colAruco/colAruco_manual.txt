@@ -4,7 +4,12 @@
 
 Available commands: 
 
---- Saving/loading settings:
+--> Misc:
+    <q>, <quit> or <exit> - close serial connection and finish execution
+
+    <-h>, <--help> or <man> - print this file in the terminal
+
+--> Saving/loading settings:
 
     <save> - Save current settings to arduino on board memory (EEPROM storage). 
         
@@ -15,7 +20,7 @@ Available commands:
 
     <load> - Load previously saved setting from on board memory.
 
---- Led/Code controls:
+--> Led/Code controls:
 
     <br> <brightness_value> - change led brightness:
 
@@ -49,5 +54,5 @@ Available commands:
                                 [INFO] 7x7 codes are currently not supported.
                     
                         - usage example: code 123 dict6
-                        
+
 ------------------------------------ colAruco Manual ------------------------------------

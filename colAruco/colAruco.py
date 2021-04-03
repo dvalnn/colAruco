@@ -137,7 +137,7 @@ def main(arduino: serial.Serial):
                 print("\033[F\033[K", end="") #cursor up one line and clear it to the end
                 continue
 
-            if 'exit'in text or 'q' in text:
+            if any(string in text for string in ['q', 'quit', 'exit']):
                 print("\033[F\033[K", end="")
                 print("[INFO] closing serial connection")
                 arduino.close()
