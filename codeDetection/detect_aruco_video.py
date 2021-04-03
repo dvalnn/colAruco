@@ -100,6 +100,7 @@ def main(args):
     #     cameraMatrix, distCoeffs, rvecs, tvecs = [
     #         npzfile[i] for i in ["mtx", "dist", "rvecs", "tvecs"]]
 
+    #camera matrix and distance coefficients outputed by ros camera_calibration module -- propper integration in progress
     cameraMatrix = np.ndarray(shape=(3, 3), buffer=np.array(
         [874.7624752186383, 0, 282.6009074642533, 0, 874.5379489806799, 218.1223179333145, 0, 0, 1]))
     distCoeffs = np.ndarray(shape=(1, 5), buffer=np.array(
