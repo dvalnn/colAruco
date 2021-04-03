@@ -107,20 +107,17 @@ void loop() {
 }
 
 /**
- * @brief 
+ * @brief handles input via serial port
  * 
- * @param color 
- * @param aruco 
- * @param size 
- * @param brightness 
- * @return true 
- * @return false 
+ * @param color ptr to current color value to update
+ * @param aruco ptr to current code array to update
+ * @param size ptr to current size of current code array to update
+ * @param brightness ptr to current brightness value to update
+ * @return true if any values were updated else false
  */
 bool inputParser(uint32_t *color, uint8_t aruco[], uint8_t *size, uint8_t *brightness) {
     if (Serial.available() > 0) {
-        // int flag = Serial.readStringUntil(' ').toInt();
         String flag = Serial.readStringUntil(' ');
-        String tmp;
 
         if (flag.indexOf("save") >= 0) {
             saveToEEPROM(aruco, *size, *brightness, *color);
@@ -185,18 +182,19 @@ void applyAruco(uint8_t arCode[], uint8_t size, uint32_t color) {
                 uint32_t tmpColor = OFFCOL(color);
                 if (code[line] & BIT(col))
                     tmpColor = color;
+
                 leds.setPixelColor(line * LINE_LED_COUNT + col + offset, tmpColor);
                 leds.show();
             }
-        } else {
+        } else
             for (short col = 0; col < size; col++) {
                 uint32_t tmpColor = OFFCOL(color);
                 if (code[line] & BIT((size - col - 1)))
                     tmpColor = color;
+
                 leds.setPixelColor(line * LINE_LED_COUNT + col, tmpColor);
                 leds.show();
             }
-        }
     }
 }
 
@@ -210,6 +208,7 @@ void clearLEDs() {
         leds.show();
     }
 }
+
 /**
  * @brief resets led strip
  * 
@@ -221,12 +220,12 @@ void resetLedStrip() {
 }
 
 /**
- * @brief              - Save display settings (code, brightness and color) as a preset to memory - only one preset may be saved at a time. Saving
- *                       a new one will overwrite the previous preset.
+ * @brief Save display settings (code, brightness and color) as a preset to memory - only one preset may be saved at a time. Saving
+ *        a new one will overwrite the previous preset.
  * 
- * @param aruco        - aruco code to store 
- * @param brightness   - brigtness value to store
- * @param color        - color value to store
+ * @param aruco aruco code to store 
+ * @param brightness brigtness value to store
+ * @param color color value to store
  */
 void saveToEEPROM(uint8_t aruco[], uint8_t size, uint8_t brightness, uint32_t color) {
     static uint8_t slot = 0;
@@ -249,11 +248,11 @@ void saveToEEPROM(uint8_t aruco[], uint8_t size, uint8_t brightness, uint32_t co
 }
 
 /**
- * @brief            - loads the latest preset saved to Arduino EEPROM memory using saveToEEPROM() function
+ * @brief loads the latest preset saved to Arduino EEPROM memory using saveToEEPROM() function
  * 
- * @param aruco      - one dimentional array (recomended minimum size of 8) to store the loaded aruco code (array of 8 bit int)
- * @param brightness - variable to store the loaded brigtness value (8 bit int)
- * @param color      - variable to store the loaded color value (32 bit int)
+ * @param aruco one dimentional array (recomended minimum size of 8) to store the loaded aruco code (array of 8 bit int)
+ * @param brightness variable to store the loaded brigtness value (8 bit int)
+ * @param color variable to store the loaded color value (32 bit int)
  */
 void loadFromEEPROM(uint8_t aruco[], uint8_t *size, uint8_t *brightness, uint32_t *color) {
     static uint8_t slot = 0;
