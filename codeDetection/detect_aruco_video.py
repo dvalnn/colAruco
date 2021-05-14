@@ -14,6 +14,7 @@ import numpy as np
 
 from sys import exit
 
+#! REFATORAR O CÓDIGO -- confusão total
 
 ###################################################################################################
 ################################## FUNCTION DECLARATION ###########################################
@@ -22,11 +23,9 @@ from sys import exit
 def dictInputParser() -> int:
     user_input = 0
     while user_input not in ARUCO_DICT.keys():
-        user_input = input(
-            "Input a aruco dictionary type do detect (suported types: -h / --help): ")
+        user_input = input("Input a aruco dictionary type do detect (suported types: -h / --help): ")
         if user_input.lower() in ["-h", "--help"]:
-            print(str(ARUCO_DICT.keys())[
-                  str(ARUCO_DICT.keys()).index("(")+1: -1])
+            print(str(ARUCO_DICT.keys())[str(ARUCO_DICT.keys()).index("(") + 1 : -1])
     return ARUCO_DICT[user_input]
 
 
@@ -42,37 +41,36 @@ def clrInputParser() -> str:
     return user_input
 
 
-def mask(frame: np.ndarray, color: str, delta: int, dilate: bool = False, kernel_size: tuple = (10, 10)) -> np.ndarray:
+def mask(frame: np.ndarray, color: str, delta: int, dilate: bool = False, kernel_size: tuple = (12, 12)) -> np.ndarray:
 
     if color == "w":
         return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     b, g, r = frame[:, :, 0], frame[:, :, 1], frame[:, :, 2]
 
-    channels = {"r": r,
-                "g": g,
-                "b": b}
+    channels = {"r": r, "g": g, "b": b}
 
     colors = ["r", "g", "b"]
 
     selected = colors.index(color)
-    mask_chnl, ch2, ch3 = channels[colors[selected]], channels[colors[(
-        selected + 1) % 3]], channels[colors[(selected + 1) % 3]]
+    mask_chnl, ch2, ch3 = (
+        channels[colors[selected]],
+        channels[colors[(selected + 1) % 3]],
+        channels[colors[(selected + 1) % 3]],
+    )
 
     zeros = np.zeros(r.shape, dtype="uint8")
 
     colorMask = (mask_chnl > (ch2 + delta)) & (mask_chnl > (ch3 + delta))
 
     #  filter false positives that come up if _ + delta > 255
-
     falsePositives = (ch2 < 255 - delta) & (ch3 < 255 - delta)
     masked_image = zeros.copy()
     masked_image[colorMask & falsePositives] = 255
 
-    if dilate:
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, kernel_size)
-        masked_image = masked_image = cv2.dilate(
-            masked_image, kernel, iterations=1)
+    # if dilate:
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, kernel_size)
+    masked_image = cv2.erode(masked_image, kernel, iterations=1)
 
     return masked_image
 
@@ -83,8 +81,7 @@ def mask(frame: np.ndarray, color: str, delta: int, dilate: bool = False, kernel
 
 def main(args):
     if args["type"] not in ARUCO_DICT:
-        print("[FATAL] ArUCo tag of '{}' is not supported".format(
-            args["type"]))
+        print("[FATAL] ArUCo tag of '{}' is not supported".format(args["type"]))
         exit(0)
 
     # load the ArUCo dictionary and grab the ArUCo parameters
@@ -100,14 +97,18 @@ def main(args):
     #     cameraMatrix, distCoeffs, rvecs, tvecs = [
     #         npzfile[i] for i in ["mtx", "dist", "rvecs", "tvecs"]]
 
-    #camera matrix and distance coefficients outputed by ros camera_calibration module -- propper integration in progress
-    cameraMatrix = np.ndarray(shape=(3, 3), buffer=np.array(
-        [874.7624752186383, 0, 282.6009074642533, 0, 874.5379489806799, 218.1223179333145, 0, 0, 1]))
-    distCoeffs = np.ndarray(shape=(1, 5), buffer=np.array(
-        [0.05363329676093317, 0.3372325263081464, -0.005382727611648226, -0.02717982394149372, 0]))
+    # camera matrix and distance coefficients outputed by ros camera_calibration module -- propper integration in progress
+    cameraMatrix = np.ndarray(
+        shape=(3, 3),
+        buffer=np.array([874.7624752186383, 0, 282.6009074642533, 0, 874.5379489806799, 218.1223179333145, 0, 0, 1]),
+    )
+    distCoeffs = np.ndarray(
+        shape=(1, 5),
+        buffer=np.array([0.05363329676093317, 0.3372325263081464, -0.005382727611648226, -0.02717982394149372, 0]),
+    )
     color = clrInputParser()
 
-    verbose = False # flag to toggle marker info printing 
+    verbose = False  # flag to toggle marker info printing
 
     # main code loop --- loop over the frames from the video stream
     while True:
@@ -122,8 +123,11 @@ def main(args):
 
         frame = imutils.resize(frame, width=1000)
         masked_image = cv2.bilateralFilter(frame, 15, 75, 90)
-        masked_image = mask(masked_image, color, 20)
+        DELTA = 10
+        masked_image = mask(masked_image, color, DELTA)
+
         # detect ArUco markers in the input frame
+        #! verificar relação entre rejeições e deteção --> 
         (corners, ids, rejected) = cv2.aruco.detectMarkers(
             masked_image, arucoDict, parameters=arucoParams, cameraMatrix=cameraMatrix, distCoeff=distCoeffs)
 
@@ -134,16 +138,14 @@ def main(args):
 
             for i in range(len(ids)):
                 rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(
-                    corners[i], 0.02, cameraMatrix, distCoeffs)
+                    corners[i], 0.02, cameraMatrix, distCoeffs
+                )
                 (rvec - tvec).any()
-                cv2.aruco.drawAxis(frame, cameraMatrix, distCoeffs,
-                                   rvec, tvec, 0.01)
-            if(verbose):
+                cv2.aruco.drawAxis(frame, cameraMatrix, distCoeffs, rvec, tvec, 0.01)
+            if verbose:
                 print(f"Aruco Marker id: {ids[i]}")
-                print(
-                    f"\trotation vector: [{rvec[ 0, 0, 0]} {rvec[ 0, 0, 1]} {rvec[ 0, 0, 2]}]")
-                print(
-                    f"\ttranslation vector: [{tvec[ 0, 0, 0]} {tvec[ 0, 0, 1]} {tvec[ 0, 0, 2]}]")
+                print(f"\trotation vector: [{rvec[ 0, 0, 0]} {rvec[ 0, 0, 1]} {rvec[ 0, 0, 2]}]")
+                print(f"\ttranslation vector: [{tvec[ 0, 0, 0]} {tvec[ 0, 0, 1]} {tvec[ 0, 0, 2]}]")
         # show the output frame
         cv2.imshow("Frame", frame)
         cv2.imshow("Masked Image", masked_image)
@@ -176,12 +178,8 @@ def main(args):
 if __name__ == "__main__":
     # construct the argument parser and parse the arguments
     ap = argparse.ArgumentParser()
-    ap.add_argument("-c", "--camera", type=int, required=False,
-                    default=0,
-                    help="webcam index")
-    ap.add_argument("-t", "--type", type=str, required=False,
-                    default="dict6_100",
-                    help="type of ArUCo tag to detect")
+    ap.add_argument("-c", "--camera", type=int, required=False, default=0, help="webcam index")
+    ap.add_argument("-t", "--type", type=str, required=False, default="dict6_100", help="type of ArUCo tag to detect")
     args = vars(ap.parse_args())
 
     # define names of each possible ArUco tag OpenCV supports
