@@ -13,6 +13,8 @@ from imutils.video import VideoStream
 
 ###################################################################################################
 ################################## FUNCTION DECLARATION ###########################################
+
+
 def cleanup():
     cv2.destroyAllWindows()
     VIDEO_SOURCE.stop()
@@ -78,6 +80,7 @@ def process_frame(original_image, target_color_channel, morphology_kernel_size: 
     # create a rectangular kernel and apply an erosion transformation to the masked frame
     dilation_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, morphology_kernel_size)
     erosion_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, morphology_kernel_size)
+    
     # cv2.erode (using rectangular kernel) will expand the black rectangles
     # to counteract deformation caused by the masking function
     masked_image = cv2.dilate(masked_image, dilation_kernel, iterations=1)
@@ -93,13 +96,16 @@ def detect_markers(original_image, masked_image, aruco_dict, verbose: bool):
         masked_image, aruco_dict, parameters=ARUCO_PARAMS, cameraMatrix=CAMERA_MATRIX, distCoeff=DIST_COEFFS
     )
     #! verificar relação entre rejeições e deteção
+    
+    if len(rejected) > 0:
+        cv2.aruco.drawDetectedMarkers(original_image, rejected)
 
     if len(corners) > 0:
         cv2.aruco.drawDetectedMarkers(original_image, corners, ids)
         for i in range(len(ids)):
             rvec, tvec, marker_points = cv2.aruco.estimatePoseSingleMarkers(
-                corners[i], 0.02, CAMERA_MATRIX, DIST_COEFFS
-            )
+                corners[i], 0.02, CAMERA_MATRIX, DIST_COEFFS)
+
             (rvec - tvec).any()
             cv2.aruco.drawAxis(original_image, CAMERA_MATRIX, DIST_COEFFS, rvec, tvec, 0.01)
 
