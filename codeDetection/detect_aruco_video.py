@@ -6,20 +6,17 @@
 # import the necessary packages
 import argparse
 
-from imutils import resize
-from imutils.video import VideoStream
-
 import cv2
 import numpy as np
-
-from sys import exit
+from imutils import resize
+from imutils.video import VideoStream
 
 
 ###################################################################################################
 ################################## FUNCTION DECLARATION ###########################################
 
 
-def dictInputParser() -> int:
+def dict_input_parser() -> int:
     user_input = 0
     while user_input not in ARUCO_DICT.keys():
         user_input = input("Input a aruco dictionary type do detect (suported types: -h / --help): ")
@@ -28,27 +25,24 @@ def dictInputParser() -> int:
     return ARUCO_DICT[user_input]
 
 
-def clrInputParser() -> str:
+def clr_input_parser() -> str:
     allowed_colors = ["r", "g", "b", "w"]
-    user_input = 0
+    user_input = None
     while user_input not in allowed_colors:
         try:
             user_input = input("Input a color channel to mask (r/g/b/w): ")
         except EOFError:
-            print("[WARN] Invalid input")
+            break
 
     return user_input
 
 
-def maskFrame(frame: np.ndarray, color: str, delta: int = 12):
+def mask_frame(frame: np.ndarray, color: str, delta: int = 12):
 
-    # Extract primary color channels from incoming frame.
-    b, g, r = frame[:, :, 0], frame[:, :, 1], frame[:, :, 2]
+    # Extract primary color channels from incoming frame into a dictionary.
+    channels = {"r": frame[:, :, 2], "g": frame[:, :, 1], "b": frame[:, :, 0]}
 
-    channels = {"r": r, "g": g, "b": b}
-
-    colors = ["r", "g", "b"]
-
+    colors = sorted(channels.keys())
     selected = colors.index(color)
 
     mask_chnl, ch2, ch3 = (
@@ -57,68 +51,76 @@ def maskFrame(frame: np.ndarray, color: str, delta: int = 12):
         channels[colors[(selected + 2) % 3]],
     )
 
-    colorMask = (mask_chnl > (ch2 + delta)) & (mask_chnl > (ch3 + delta))
+    color_mask = (mask_chnl > (ch2 + delta)) & (mask_chnl > (ch3 + delta))
 
     #  filter false positives that come up if _ + delta > 255
-    falsePositives = (ch2 < 255 - delta) & (ch3 < 255 - delta)
-    masked_image = np.zeros(r.shape, dtype="uint8")
-    masked_image[colorMask & falsePositives] = 255
+    false_positives = (ch2 < 255 - delta) & (ch3 < 255 - delta)
+    masked_image = np.zeros(mask_chnl.shape, dtype="uint8")
+    masked_image[color_mask & false_positives] = 255
 
     return masked_image
 
 
-def processFrame(original_image, target_color_channel, morphology_kernel_size: tuple = (12, 12)):
+def process_frame(original_image, target_color_channel, morphology_kernel_size: tuple = (12, 12)):
     if target_color_channel == "w":
         return original_image, cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
 
     # run a bilateralFilter to blur the original image and then mask the target color channel
-    masked_image = maskFrame(cv2.bilateralFilter(original_image, 15, 75, 90), target_color_channel)
+    masked_image = mask_frame(cv2.bilateralFilter(original_image, 15, 75, 90), target_color_channel)
 
     # create a rectangular kernel and apply an erosion transformation to the masked frame
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, morphology_kernel_size)
-    # cv2.erode (using rectangular kernel) will expand the black rectangles to counteract deformation caused by the masking
+    # cv2.erode (using rectangular kernel) will expand the black rectangles
+    # to counteract deformation caused by the masking function
     masked_image = cv2.erode(masked_image, kernel, iterations=1)
 
     # return both the unaltered original frame as well as the treated version for cv2 detection
     return original_image, masked_image
 
 
+def detect_markers(original_image, masked_image, aruco_dict, verbose=False):
+    # detect ArUco markers in the input frame
+    #! verificar relação entre rejeições e deteção -->
+    corners, ids, rejected = cv2.aruco.detectMarkers(masked_image, aruco_dict,
+                                                    parameters=ARUCO_PARAMS,
+                                                    cameraMatrix=CAMERA_MATRIX,
+                                                    distCoeff=DIST_COEFFS)
+
+    if len(corners) > 0:
+        cv2.aruco.drawDetectedMarkers(original_image, corners, ids)
+        for i in range(len(ids)):
+            rvec, tvec, marker_points = cv2.aruco.estimatePoseSingleMarkers(corners[i],
+                                                                            0.02,
+                                                                            CAMERA_MATRIX,
+                                                                            DIST_COEFFS)
+            (rvec - tvec).any()
+            cv2.aruco.drawAxis(original_image, CAMERA_MATRIX, DIST_COEFFS, rvec, tvec, 0.01)
+
+        if verbose:
+            print(f"Aruco Marker id: {ids[i]}")
+            print(f"\trotation vector: [{rvec[ 0, 0, 0]} {rvec[ 0, 0, 1]} {rvec[ 0, 0, 2]}]")
+            print(f"\ttranslation vector: [{tvec[ 0, 0, 0]} {tvec[ 0, 0, 1]} {tvec[ 0, 0, 2]}]")
+
+
 ###################################################################################################
 ######################################### MAIN CODE ###############################################
 
 
-def mainLoop(arucoDict, arucoParams, videoSource, cameraMatrix, distCoeffs):
+def main(dict_type):
+    print("[INFO] detecting '{}' tags...".format(dict_type))
+    aruco_dict = cv2.aruco.Dictionary_get(ARUCO_DICT[dict_type])
 
-    target_color_channel = clrInputParser()
+    target_color_channel = clr_input_parser()
     verbose = False  # flag to toggle marker info printing
 
     # main code loop --- loop over the frames from the video stream
-    while True:
+    while target_color_channel:
         # grab the frame from the threaded video stream and resize it
         # to have a maximum width of 600 pixels
-        original_image, masked_image = processFrame(resize(videoSource.read(), width=1000), target_color_channel)
+        original_image, masked_image = process_frame(resize(VIDEO_SOURCE.read(), width=1000), target_color_channel)
 
-        # detect ArUco markers in the input frame
-        #! verificar relação entre rejeições e deteção -->
-        (corners, ids, rejected) = cv2.aruco.detectMarkers(
-            masked_image, arucoDict, parameters=arucoParams, cameraMatrix=cameraMatrix, distCoeff=distCoeffs
-        )
+        detect_markers(original_image, masked_image, aruco_dict)
 
-        # ,cameraMatrix=cameraMatrix, distCoeff=distCoeffs
-        # verify *at least* one ArUco marker was detected
-        if len(corners) > 0:
-            cv2.aruco.drawDetectedMarkers(original_image, corners, ids)
-
-            for i in range(len(ids)):
-                rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(
-                    corners[i], 0.02, cameraMatrix, distCoeffs
-                )
-                (rvec - tvec).any()
-                cv2.aruco.drawAxis(original_image, cameraMatrix, distCoeffs, rvec, tvec, 0.01)
-            if verbose:
-                print(f"Aruco Marker id: {ids[i]}")
-                print(f"\trotation vector: [{rvec[ 0, 0, 0]} {rvec[ 0, 0, 1]} {rvec[ 0, 0, 2]}]")
-                print(f"\ttranslation vector: [{tvec[ 0, 0, 0]} {tvec[ 0, 0, 1]} {tvec[ 0, 0, 2]}]")
         # show the output frame
         cv2.imshow("Frame", original_image)
         cv2.imshow("Masked Image", masked_image)
@@ -128,20 +130,20 @@ def mainLoop(arucoDict, arucoParams, videoSource, cameraMatrix, distCoeffs):
 
         # if the 'i' key was pressed, pause the loop and parse the color mask input
         if key == ord("d"):
-            dictType = dictInputParser()
-            arucoDict = cv2.aruco.Dictionary_get(dictType)
+            dict_type = dict_input_parser()
+            aruco_dict = cv2.aruco.Dictionary_get(dict_type)
         # if the 'i' key was pressed, pause the loop and parse the color mask input
         if key == ord("i"):
-            color = clrInputParser()
+            target_color_channel = clr_input_parser()
         if key == ord("p"):
-            verbose = verbose != True
+            verbose = verbose is not True
         # if the 'q' key was pressed, break from the loop
         if key == ord("q"):
             break
 
     # final cleanup
     cv2.destroyAllWindows()
-    videoSource.stop()
+    VIDEO_SOURCE.stop()
 
 
 ###################################################################################################
@@ -181,17 +183,15 @@ if __name__ == "__main__":
         exit(0)
 
     # load the aruco dictionary and create detection parameters
-    print("[INFO] detecting '{}' tags...".format(args["type"]))
-    arucoDict = cv2.aruco.Dictionary_get(ARUCO_DICT[args["type"]])
-    arucoParams = cv2.aruco.DetectorParameters_create()
+    ARUCO_PARAMS = cv2.aruco.DetectorParameters_create()
 
     print("[INFO] starting video stream...")
-    videoSource = VideoStream(src=args["camera"], resolution=(1920, 1080)).start()
+    VIDEO_SOURCE = VideoStream(src=args["camera"], resolution=(1920, 1080)).start()
 
-    testFrame = videoSource.read()
+    testFrame = VIDEO_SOURCE.read()
     if testFrame is None:
         print("[FATAL] camera feed not found")
-        videoSource.stop()
+        VIDEO_SOURCE.stop()
         exit(0)
 
     # with np.load("../cameraCalibration/calib_results.npz") as npzfile:
@@ -199,14 +199,14 @@ if __name__ == "__main__":
     #         npzfile[i] for i in ["mtx", "dist", "rvecs", "tvecs"]]
 
     # camera matrix and distance coefficients outputed by ros camera_calibration module -- needs propper integration
-    cameraMatrix = np.ndarray(
+    CAMERA_MATRIX = np.ndarray(
         shape=(3, 3),
         buffer=np.array([874.7624752186383, 0, 282.6009074642533, 0, 874.5379489806799, 218.1223179333145, 0, 0, 1]),
     )
 
-    distCoeffs = np.ndarray(
+    DIST_COEFFS = np.ndarray(
         shape=(1, 5),
         buffer=np.array([0.05363329676093317, 0.3372325263081464, -0.005382727611648226, -0.02717982394149372, 0]),
     )
 
-    mainLoop(arucoDict, arucoParams, videoSource, cameraMatrix, distCoeffs)
+    main(args["type"])
