@@ -96,8 +96,8 @@ def detect_markers(original_image, masked_image, aruco_dict, verbose: bool):
         masked_image, aruco_dict, parameters=ARUCO_PARAMS, cameraMatrix=CAMERA_MATRIX, distCoeff=DIST_COEFFS
     )
     #! verificar relação entre rejeições e deteção
-    
-    if len(rejected) > 0:
+
+    if len(rejected) > 0 and verbose:
         cv2.aruco.drawDetectedMarkers(original_image, rejected)
 
     if len(corners) > 0:
