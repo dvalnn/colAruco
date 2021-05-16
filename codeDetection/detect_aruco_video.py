@@ -46,16 +46,17 @@ def mask_frame(frame: np.ndarray, color: str, delta: int = 12):
 
     # Extract primary color channels from incoming frame into a dictionary.
     channels = {"r": frame[:, :, 2], "g": frame[:, :, 1], "b": frame[:, :, 0]}
+    
+    mask_chnl = channels[color]
+    ch2 = None
 
-    colors = sorted(channels.keys())
-    selected = colors.index(color)
-
-    # assign the selected color channel to mask_chnl and the rest to ch2 and ch3
-    mask_chnl, ch2, ch3 = (
-        channels[colors[selected]],
-        channels[colors[(selected + 1) % 3]],
-        channels[colors[(selected + 2) % 3]],
-    )
+    for key in channels.keys():
+        if key == color:
+            continue
+        if ch2 is None:
+            ch2 = channels[key]
+        else:
+            ch3 = channels[key]
 
     color_mask = (mask_chnl > (ch2 + delta)) & (mask_chnl > (ch3 + delta))
 
