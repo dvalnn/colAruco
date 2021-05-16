@@ -35,7 +35,8 @@ def clr_input_parser() -> str:
         try:
             user_input = input("Input a color channel to mask (r/g/b/w): ")
         except EOFError:
-            break
+            cleanup()
+            quit()
 
     return user_input
 
@@ -48,6 +49,7 @@ def mask_frame(frame: np.ndarray, color: str, delta: int = 12):
     colors = sorted(channels.keys())
     selected = colors.index(color)
 
+    # assign the selected color channel to mask_chnl and the rest to ch2 and ch3
     mask_chnl, ch2, ch3 = (
         channels[colors[selected]],
         channels[colors[(selected + 1) % 3]],
@@ -64,38 +66,39 @@ def mask_frame(frame: np.ndarray, color: str, delta: int = 12):
     return masked_image
 
 
-def process_frame(original_image, target_color_channel, morphology_kernel_size: tuple = (12, 12)):
+def process_frame(original_image, target_color_channel, morphology_kernel_size: tuple = (10, 10)):
     if target_color_channel == "w":
-        return original_image, cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
+        masked_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
+        return original_image, cv2.bilateralFilter(masked_image, 15, 75, 90)
 
     # run a bilateralFilter to blur the original image and then mask the target color channel
     masked_image = mask_frame(cv2.bilateralFilter(original_image, 15, 75, 90), target_color_channel)
 
     # create a rectangular kernel and apply an erosion transformation to the masked frame
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, morphology_kernel_size)
+    dilation_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, morphology_kernel_size)
+    erosion_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, morphology_kernel_size)
     # cv2.erode (using rectangular kernel) will expand the black rectangles
     # to counteract deformation caused by the masking function
-    masked_image = cv2.erode(masked_image, kernel, iterations=1)
+    masked_image = cv2.dilate(masked_image, dilation_kernel, iterations=1)
+    masked_image = cv2.erode(masked_image, erosion_kernel, iterations=1)
 
     # return both the unaltered original frame as well as the treated version for cv2 detection
     return original_image, masked_image
 
 
-def detect_markers(original_image, masked_image, aruco_dict, verbose:bool):
+def detect_markers(original_image, masked_image, aruco_dict, verbose: bool):
     # detect ArUco markers in the input frame
     #! verificar relação entre rejeições e deteção -->
-    corners, ids, rejected = cv2.aruco.detectMarkers(masked_image, aruco_dict,
-                                                    parameters=ARUCO_PARAMS,
-                                                    cameraMatrix=CAMERA_MATRIX,
-                                                    distCoeff=DIST_COEFFS)
+    corners, ids, rejected = cv2.aruco.detectMarkers(
+        masked_image, aruco_dict, parameters=ARUCO_PARAMS, cameraMatrix=CAMERA_MATRIX, distCoeff=DIST_COEFFS
+    )
 
     if len(corners) > 0:
         cv2.aruco.drawDetectedMarkers(original_image, corners, ids)
         for i in range(len(ids)):
-            rvec, tvec, marker_points = cv2.aruco.estimatePoseSingleMarkers(corners[i],
-                                                                            0.02,
-                                                                            CAMERA_MATRIX,
-                                                                            DIST_COEFFS)
+            rvec, tvec, marker_points = cv2.aruco.estimatePoseSingleMarkers(
+                corners[i], 0.02, CAMERA_MATRIX, DIST_COEFFS
+            )
             (rvec - tvec).any()
             cv2.aruco.drawAxis(original_image, CAMERA_MATRIX, DIST_COEFFS, rvec, tvec, 0.01)
 
@@ -117,7 +120,7 @@ def main(dict_type):
     verbose = False  # flag to toggle marker info printing
 
     # main code loop --- loop over the frames from the video stream
-    while target_color_channel:
+    while True:
         # grab the frame from the threaded video stream and resize it
         # to have a maximum width of 600 pixels
         original_image, masked_image = process_frame(resize(VIDEO_SOURCE.read(), width=1000), target_color_channel)
@@ -146,6 +149,7 @@ def main(dict_type):
 
     # final cleanup
     cleanup()
+
 
 ###################################################################################################
 ######################################## DRIVER CODE ##############################################
