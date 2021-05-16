@@ -3,7 +3,6 @@
 # USAGE
 # python detect_aruco_video.py -c [cameraIndex] -t [dictType]
 
-# import the necessary packages
 import argparse
 
 import cv2
@@ -67,6 +66,8 @@ def mask_frame(frame: np.ndarray, color: str, delta: int = 12):
 
 
 def process_frame(original_image, target_color_channel, morphology_kernel_size: tuple = (10, 10)):
+    # if color is white, no masking is done and only the bilateralFilter is applied 
+    # image is also converted to grayscale
     if target_color_channel == "w":
         masked_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
         return original_image, cv2.bilateralFilter(masked_image, 15, 75, 90)
@@ -88,10 +89,10 @@ def process_frame(original_image, target_color_channel, morphology_kernel_size: 
 
 def detect_markers(original_image, masked_image, aruco_dict, verbose: bool):
     # detect ArUco markers in the input frame
-    #! verificar relação entre rejeições e deteção -->
     corners, ids, rejected = cv2.aruco.detectMarkers(
         masked_image, aruco_dict, parameters=ARUCO_PARAMS, cameraMatrix=CAMERA_MATRIX, distCoeff=DIST_COEFFS
     )
+    #! verificar relação entre rejeições e deteção
 
     if len(corners) > 0:
         cv2.aruco.drawDetectedMarkers(original_image, corners, ids)
