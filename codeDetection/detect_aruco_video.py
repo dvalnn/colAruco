@@ -6,7 +6,7 @@
 # import the necessary packages
 import argparse
 
-import imutils
+from imutils import resize
 from imutils.video import VideoStream
 
 import cv2
@@ -14,7 +14,6 @@ import numpy as np
 
 from sys import exit
 
-#! REFATORAR O CÓDIGO -- confusão total
 
 ###################################################################################################
 ################################## FUNCTION DECLARATION ###########################################
@@ -41,11 +40,9 @@ def clrInputParser() -> str:
     return user_input
 
 
-def mask(frame: np.ndarray, color: str, delta: int, dilate: bool = False, kernel_size: tuple = (12, 12)) -> np.ndarray:
+def maskFrame(frame: np.ndarray, color: str, delta: int = 12):
 
-    if color == "w":
-        return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
+    # Extract primary color channels from incoming frame.
     b, g, r = frame[:, :, 0], frame[:, :, 1], frame[:, :, 2]
 
     channels = {"r": r, "g": g, "b": b}
@@ -53,101 +50,77 @@ def mask(frame: np.ndarray, color: str, delta: int, dilate: bool = False, kernel
     colors = ["r", "g", "b"]
 
     selected = colors.index(color)
+
     mask_chnl, ch2, ch3 = (
         channels[colors[selected]],
         channels[colors[(selected + 1) % 3]],
-        channels[colors[(selected + 1) % 3]],
+        channels[colors[(selected + 2) % 3]],
     )
-
-    zeros = np.zeros(r.shape, dtype="uint8")
 
     colorMask = (mask_chnl > (ch2 + delta)) & (mask_chnl > (ch3 + delta))
 
     #  filter false positives that come up if _ + delta > 255
     falsePositives = (ch2 < 255 - delta) & (ch3 < 255 - delta)
-    masked_image = zeros.copy()
+    masked_image = np.zeros(r.shape, dtype="uint8")
     masked_image[colorMask & falsePositives] = 255
 
-    # if dilate:
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, kernel_size)
+    return masked_image
+
+
+def processFrame(original_image, target_color_channel, morphology_kernel_size: tuple = (12, 12)):
+    if target_color_channel == "w":
+        return original_image, cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
+
+    # run a bilateralFilter to blur the original image and then mask the target color channel
+    masked_image = maskFrame(cv2.bilateralFilter(original_image, 15, 75, 90), target_color_channel)
+
+    # create a rectangular kernel and apply an erosion transformation to the masked frame
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, morphology_kernel_size)
+    # cv2.erode (using rectangular kernel) will expand the black rectangles to counteract deformation caused by the masking
     masked_image = cv2.erode(masked_image, kernel, iterations=1)
 
-    return masked_image
+    # return both the unaltered original frame as well as the treated version for cv2 detection
+    return original_image, masked_image
 
 
 ###################################################################################################
 ######################################### MAIN CODE ###############################################
 
 
-def main(args):
-    if args["type"] not in ARUCO_DICT:
-        print("[FATAL] ArUCo tag of '{}' is not supported".format(args["type"]))
-        exit(0)
+def mainLoop(arucoDict, arucoParams, videoSource, cameraMatrix, distCoeffs):
 
-    # load the ArUCo dictionary and grab the ArUCo parameters
-    print("[INFO] detecting '{}' tags...".format(args["type"]))
-    arucoDict = cv2.aruco.Dictionary_get(ARUCO_DICT[args["type"]])
-    arucoParams = cv2.aruco.DetectorParameters_create()
-
-    # initialize the video stream and allow the camera sensor to warm up
-    print("[INFO] starting video stream...")
-    vs = VideoStream(src=args["camera"], resolution=(1920, 1080)).start()
-
-    # with np.load("../cameraCalibration/calib_results.npz") as npzfile:
-    #     cameraMatrix, distCoeffs, rvecs, tvecs = [
-    #         npzfile[i] for i in ["mtx", "dist", "rvecs", "tvecs"]]
-
-    # camera matrix and distance coefficients outputed by ros camera_calibration module -- propper integration in progress
-    cameraMatrix = np.ndarray(
-        shape=(3, 3),
-        buffer=np.array([874.7624752186383, 0, 282.6009074642533, 0, 874.5379489806799, 218.1223179333145, 0, 0, 1]),
-    )
-    distCoeffs = np.ndarray(
-        shape=(1, 5),
-        buffer=np.array([0.05363329676093317, 0.3372325263081464, -0.005382727611648226, -0.02717982394149372, 0]),
-    )
-    color = clrInputParser()
-
+    target_color_channel = clrInputParser()
     verbose = False  # flag to toggle marker info printing
 
     # main code loop --- loop over the frames from the video stream
     while True:
         # grab the frame from the threaded video stream and resize it
         # to have a maximum width of 600 pixels
-        frame = vs.read()
-
-        if frame is None:
-            print("[FATAL] camera feed not found")
-            vs.stop()
-            exit(0)
-
-        frame = imutils.resize(frame, width=1000)
-        masked_image = cv2.bilateralFilter(frame, 15, 75, 90)
-        DELTA = 10
-        masked_image = mask(masked_image, color, DELTA)
+        original_image, masked_image = processFrame(resize(videoSource.read(), width=1000), target_color_channel)
 
         # detect ArUco markers in the input frame
-        #! verificar relação entre rejeições e deteção --> 
+        #! verificar relação entre rejeições e deteção -->
         (corners, ids, rejected) = cv2.aruco.detectMarkers(
-            masked_image, arucoDict, parameters=arucoParams, cameraMatrix=cameraMatrix, distCoeff=distCoeffs)
+            masked_image, arucoDict, parameters=arucoParams, cameraMatrix=cameraMatrix, distCoeff=distCoeffs
+        )
 
         # ,cameraMatrix=cameraMatrix, distCoeff=distCoeffs
         # verify *at least* one ArUco marker was detected
         if len(corners) > 0:
-            cv2.aruco.drawDetectedMarkers(frame, corners, ids)
+            cv2.aruco.drawDetectedMarkers(original_image, corners, ids)
 
             for i in range(len(ids)):
                 rvec, tvec, markerPoints = cv2.aruco.estimatePoseSingleMarkers(
                     corners[i], 0.02, cameraMatrix, distCoeffs
                 )
                 (rvec - tvec).any()
-                cv2.aruco.drawAxis(frame, cameraMatrix, distCoeffs, rvec, tvec, 0.01)
+                cv2.aruco.drawAxis(original_image, cameraMatrix, distCoeffs, rvec, tvec, 0.01)
             if verbose:
                 print(f"Aruco Marker id: {ids[i]}")
                 print(f"\trotation vector: [{rvec[ 0, 0, 0]} {rvec[ 0, 0, 1]} {rvec[ 0, 0, 2]}]")
                 print(f"\ttranslation vector: [{tvec[ 0, 0, 0]} {tvec[ 0, 0, 1]} {tvec[ 0, 0, 2]}]")
         # show the output frame
-        cv2.imshow("Frame", frame)
+        cv2.imshow("Frame", original_image)
         cv2.imshow("Masked Image", masked_image)
 
         ################################ input waitKeys ################################
@@ -166,9 +139,9 @@ def main(args):
         if key == ord("q"):
             break
 
-    # do a bit of cleanup
+    # final cleanup
     cv2.destroyAllWindows()
-    vs.stop()
+    videoSource.stop()
 
 
 ###################################################################################################
@@ -203,4 +176,37 @@ if __name__ == "__main__":
         "original": cv2.aruco.DICT_ARUCO_ORIGINAL,
     }
 
-    main(args)
+    if args["type"] not in ARUCO_DICT:
+        print("[FATAL] ArUCo tag of '{}' is not supported".format(args["type"]))
+        exit(0)
+
+    # load the aruco dictionary and create detection parameters
+    print("[INFO] detecting '{}' tags...".format(args["type"]))
+    arucoDict = cv2.aruco.Dictionary_get(ARUCO_DICT[args["type"]])
+    arucoParams = cv2.aruco.DetectorParameters_create()
+
+    print("[INFO] starting video stream...")
+    videoSource = VideoStream(src=args["camera"], resolution=(1920, 1080)).start()
+
+    testFrame = videoSource.read()
+    if testFrame is None:
+        print("[FATAL] camera feed not found")
+        videoSource.stop()
+        exit(0)
+
+    # with np.load("../cameraCalibration/calib_results.npz") as npzfile:
+    #     cameraMatrix, distCoeffs, rvecs, tvecs = [
+    #         npzfile[i] for i in ["mtx", "dist", "rvecs", "tvecs"]]
+
+    # camera matrix and distance coefficients outputed by ros camera_calibration module -- needs propper integration
+    cameraMatrix = np.ndarray(
+        shape=(3, 3),
+        buffer=np.array([874.7624752186383, 0, 282.6009074642533, 0, 874.5379489806799, 218.1223179333145, 0, 0, 1]),
+    )
+
+    distCoeffs = np.ndarray(
+        shape=(1, 5),
+        buffer=np.array([0.05363329676093317, 0.3372325263081464, -0.005382727611648226, -0.02717982394149372, 0]),
+    )
+
+    mainLoop(arucoDict, arucoParams, videoSource, cameraMatrix, distCoeffs)
