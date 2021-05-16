@@ -14,6 +14,9 @@ from imutils.video import VideoStream
 
 ###################################################################################################
 ################################## FUNCTION DECLARATION ###########################################
+def cleanup():
+    cv2.destroyAllWindows()
+    VIDEO_SOURCE.stop()
 
 
 def dict_input_parser() -> int:
@@ -78,7 +81,7 @@ def process_frame(original_image, target_color_channel, morphology_kernel_size: 
     return original_image, masked_image
 
 
-def detect_markers(original_image, masked_image, aruco_dict, verbose=False):
+def detect_markers(original_image, masked_image, aruco_dict, verbose:bool):
     # detect ArUco markers in the input frame
     #! verificar relação entre rejeições e deteção -->
     corners, ids, rejected = cv2.aruco.detectMarkers(masked_image, aruco_dict,
@@ -119,7 +122,7 @@ def main(dict_type):
         # to have a maximum width of 600 pixels
         original_image, masked_image = process_frame(resize(VIDEO_SOURCE.read(), width=1000), target_color_channel)
 
-        detect_markers(original_image, masked_image, aruco_dict)
+        detect_markers(original_image, masked_image, aruco_dict, verbose)
 
         # show the output frame
         cv2.imshow("Frame", original_image)
@@ -133,18 +136,16 @@ def main(dict_type):
             dict_type = dict_input_parser()
             aruco_dict = cv2.aruco.Dictionary_get(dict_type)
         # if the 'i' key was pressed, pause the loop and parse the color mask input
-        if key == ord("i"):
+        if key == ord("c"):
             target_color_channel = clr_input_parser()
-        if key == ord("p"):
+        if key == ord("v"):
             verbose = verbose is not True
         # if the 'q' key was pressed, break from the loop
         if key == ord("q"):
             break
 
     # final cleanup
-    cv2.destroyAllWindows()
-    VIDEO_SOURCE.stop()
-
+    cleanup()
 
 ###################################################################################################
 ######################################## DRIVER CODE ##############################################
@@ -180,7 +181,7 @@ if __name__ == "__main__":
 
     if args["type"] not in ARUCO_DICT:
         print("[FATAL] ArUCo tag of '{}' is not supported".format(args["type"]))
-        exit(0)
+        quit()
 
     # load the aruco dictionary and create detection parameters
     ARUCO_PARAMS = cv2.aruco.DetectorParameters_create()
@@ -192,7 +193,7 @@ if __name__ == "__main__":
     if testFrame is None:
         print("[FATAL] camera feed not found")
         VIDEO_SOURCE.stop()
-        exit(0)
+        quit()
 
     # with np.load("../cameraCalibration/calib_results.npz") as npzfile:
     #     cameraMatrix, distCoeffs, rvecs, tvecs = [
