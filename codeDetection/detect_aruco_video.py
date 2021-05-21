@@ -46,7 +46,7 @@ def mask_frame(frame: np.ndarray, color: str, delta: int = 12):
 
     # Extract primary color channels from incoming frame into a dictionary.
     channels = {"r": frame[:, :, 2], "g": frame[:, :, 1], "b": frame[:, :, 0]}
-    
+
     mask_chnl = channels[color]
     ch2 = None
 
@@ -69,7 +69,7 @@ def mask_frame(frame: np.ndarray, color: str, delta: int = 12):
 
 
 def process_frame(original_image, target_color_channel, morphology_kernel_size: tuple = (10, 10)):
-    # if color is white, no masking is done and only the bilateralFilter is applied 
+    # if color is white, no masking is done and only the bilateralFilter is applied
     # image is also converted to grayscale
     if target_color_channel == "w":
         masked_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
@@ -81,7 +81,7 @@ def process_frame(original_image, target_color_channel, morphology_kernel_size: 
     # create a rectangular kernel and apply an erosion transformation to the masked frame
     dilation_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, morphology_kernel_size)
     erosion_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, morphology_kernel_size)
-    
+
     # cv2.erode (using rectangular kernel) will expand the black rectangles
     # to counteract deformation caused by the masking function
     masked_image = cv2.dilate(masked_image, dilation_kernel, iterations=1)
@@ -105,7 +105,8 @@ def detect_markers(original_image, masked_image, aruco_dict, verbose: bool):
         cv2.aruco.drawDetectedMarkers(original_image, corners, ids)
         for i in range(len(ids)):
             rvec, tvec, marker_points = cv2.aruco.estimatePoseSingleMarkers(
-                corners[i], 0.02, CAMERA_MATRIX, DIST_COEFFS)
+                corners[i], 0.02, CAMERA_MATRIX, DIST_COEFFS
+            )
 
             (rvec - tvec).any()
             cv2.aruco.drawAxis(original_image, CAMERA_MATRIX, DIST_COEFFS, rvec, tvec, 0.01)
@@ -212,14 +213,25 @@ if __name__ == "__main__":
     #         npzfile[i] for i in ["mtx", "dist", "rvecs", "tvecs"]]
 
     # camera matrix and distance coefficients outputed by ros camera_calibration module -- needs propper integration
+    # CAMERA_MATRIX = np.ndarray(
+    #     shape=(3, 3),
+    #     buffer=np.array([874.7624752186383, 0, 282.6009074642533, 0, 874.5379489806799, 218.1223179333145, 0, 0, 1]),
+    # )
+
     CAMERA_MATRIX = np.ndarray(
         shape=(3, 3),
-        buffer=np.array([874.7624752186383, 0, 282.6009074642533, 0, 874.5379489806799, 218.1223179333145, 0, 0, 1]),
+        buffer=np.array([660.15908, 0.0, 312.77898, 0.0, 718.20931, 197.64162, 0.0, 0.0, 1.0]),
     )
+
+    # DIST_COEFFS = np.ndarray(
+    #     shape=(1, 5),
+    #     buffer=np.array([0.05363329676093317, 0.3372325263081464, -0.005382727611648226, -0.02717982394149372, 0]),
+    # )
+
 
     DIST_COEFFS = np.ndarray(
         shape=(1, 5),
-        buffer=np.array([0.05363329676093317, 0.3372325263081464, -0.005382727611648226, -0.02717982394149372, 0]),
+        buffer=np.array([0.071220, -0.145375, -0.016046, -0.003888, 0.000000]),
     )
 
     main(args["type"])
