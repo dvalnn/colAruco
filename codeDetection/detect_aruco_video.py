@@ -150,7 +150,7 @@ def main(dict_type):
         # if the 'i' key was pressed, pause the loop and parse the color mask input
         if key == ord("c"):
             target_color_channel = clr_input_parser()
-        if key == ord("v"):
+        if key == ord("v") or key == ord("p"):
             verbose = verbose is not True
         # if the 'q' key was pressed, break from the loop
         if key == ord("q"):
