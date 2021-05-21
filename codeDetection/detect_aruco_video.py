@@ -43,7 +43,6 @@ def clr_input_parser() -> str:
 
 
 def mask_frame(frame: np.ndarray, color: str, delta: int = 12):
-
     # Extract primary color channels from incoming frame into a dictionary.
     channels = {"r": frame[:, :, 2], "g": frame[:, :, 1], "b": frame[:, :, 0]}
 
@@ -69,25 +68,28 @@ def mask_frame(frame: np.ndarray, color: str, delta: int = 12):
 
 
 def process_frame(original_image, target_color_channel, morphology_kernel_size: tuple = (10, 10)):
-    # if color is white, no masking is done and only the bilateralFilter is applied
-    # image is also converted to grayscale
+    # run a bilateralFilter to blur the original image - helps reducing noise for future masking
+    blurred_image = cv2.bilateralFilter(original_image, 15, 75, 90)
+    
+    # if the target color is "white", image is only converted to grayscale -- no further masking is needed
     if target_color_channel == "w":
-        masked_image = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
-        return original_image, cv2.bilateralFilter(masked_image, 15, 75, 90)
+        return original_image, cv2.cvtColor(blurred_image, cv2.COLOR_BGR2GRAY)
 
-    # run a bilateralFilter to blur the original image and then mask the target color channel
-    masked_image = mask_frame(cv2.bilateralFilter(original_image, 15, 75, 90), target_color_channel)
+    # threshold image relative to the selected color channel\
+    masked_image = mask_frame(blurred_image, target_color_channel)
 
-    # create a rectangular kernel and apply an erosion transformation to the masked frame
+    # create an eliptical kernel for image dilation and a rectangular one for erosion
     dilation_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, morphology_kernel_size)
     erosion_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, morphology_kernel_size)
 
-    # cv2.erode (using rectangular kernel) will expand the black rectangles
-    # to counteract deformation caused by the masking function
+    # image dilation with eliptical kernel will help close possible black spots inside the code squares
+    # created due to excessive glow in the center of the pixel (where the led is located)  
     masked_image = cv2.dilate(masked_image, dilation_kernel, iterations=1)
+    
+    # image erosion with rectangular kernel to try and correct the proportions of black and white squares
+    # in the masked/thresholded image -- white squares tend have bigger area than the black squares 
     masked_image = cv2.erode(masked_image, erosion_kernel, iterations=1)
 
-    # return both the unaltered original frame as well as the treated version for cv2 detection
     return original_image, masked_image
 
 
@@ -96,11 +98,11 @@ def detect_markers(original_image, masked_image, aruco_dict, verbose: bool):
     corners, ids, rejected = cv2.aruco.detectMarkers(
         masked_image, aruco_dict, parameters=ARUCO_PARAMS, cameraMatrix=CAMERA_MATRIX, distCoeff=DIST_COEFFS
     )
-    #! verificar relação entre rejeições e deteção
 
     if len(rejected) > 0 and verbose:
         cv2.aruco.drawDetectedMarkers(original_image, rejected)
 
+    # if at least 1 marker was detected, corners matrix will not be empty
     if len(corners) > 0:
         cv2.aruco.drawDetectedMarkers(original_image, corners, ids)
         for i in range(len(ids)):
@@ -131,14 +133,14 @@ def main(dict_type):
     # main code loop --- loop over the frames from the video stream
     while True:
         # grab the frame from the threaded video stream and resize it
-        # to have a maximum width of 600 pixels
+        # to have a maximum width of 1000 pixels
         original_image, masked_image = process_frame(resize(VIDEO_SOURCE.read(), width=1000), target_color_channel)
 
         detect_markers(original_image, masked_image, aruco_dict, verbose)
 
-        # show the output frame
-        cv2.imshow("Frame", original_image)
-        cv2.imshow("Masked Image", masked_image)
+        # show the input and output frames
+        cv2.imshow("Camera", original_image)
+        cv2.imshow("CV2 input", masked_image)
 
         ################################ input waitKeys ################################
         key = cv2.waitKey(1) & 0xFF
@@ -147,12 +149,16 @@ def main(dict_type):
         if key == ord("d"):
             dict_type = dict_input_parser()
             aruco_dict = cv2.aruco.Dictionary_get(dict_type)
+        
         # if the 'i' key was pressed, pause the loop and parse the color mask input
         if key == ord("c"):
             target_color_channel = clr_input_parser()
+        
+        # toggle verbose mode using either 'v' or 'p' keys
         if key == ord("v") or key == ord("p"):
             verbose = verbose is not True
-        # if the 'q' key was pressed, break from the loop
+        
+        # 'q' terminates execution
         if key == ord("q"):
             break
 
