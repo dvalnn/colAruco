@@ -173,7 +173,7 @@ def main(dict_type):
 if __name__ == "__main__":
     # construct the argument parser and parse the arguments
     ap = argparse.ArgumentParser()
-    ap.add_argument("-c", "--camera", type=int, required=False, default=0, help="webcam index")
+    ap.add_argument("-c", "--camera", type=int, required=False, default=1, help="webcam index")
     ap.add_argument("-t", "--type", type=str, required=False, default="dict6_100", help="type of ArUCo tag to detect")
     args = vars(ap.parse_args())
 
@@ -207,10 +207,20 @@ if __name__ == "__main__":
 
     print("[INFO] starting video stream...")
     VIDEO_SOURCE = VideoStream(src=args["camera"], resolution=(1920, 1080)).start()
-
     testFrame = VIDEO_SOURCE.read()
+
+    for cam_src in range(-args["camera"], 10):
+        print("[INFO] starting video stream...")
+        VIDEO_SOURCE = VideoStream(src=cam_src , resolution=(1920, 1080)).start()
+        testFrame = VIDEO_SOURCE.read()
+        
+        if testFrame is not None:
+            break
+
+        print("[FATAL] camera feed not found on index {}".format(args["camera"] + i))
+        VIDEO_SOURCE.stop()
+
     if testFrame is None:
-        print("[FATAL] camera feed not found")
         VIDEO_SOURCE.stop()
         quit()
 
