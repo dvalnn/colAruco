@@ -15,6 +15,16 @@ from imutils.video import VideoStream
 ################################## FUNCTION DECLARATION ###########################################
 
 
+def log(func):
+    def wrapper(*args, **kwargs):
+        ret_values = [val for val in func(*args, **kwargs)]
+        with open("detection_output.txt", "a") as f:
+            f.write(f"{str(func)} called with {args} {kwargs} -- output: {ret_values}\n\n")
+        return ret_values
+        
+    return wrapper
+
+
 def cleanup():
     cv2.destroyAllWindows()
     VIDEO_SOURCE.stop()
@@ -93,6 +103,11 @@ def process_frame(original_image, target_color_channel, morphology_kernel_size: 
     return original_image, masked_image
 
 
+@log
+def calculate_pose(corners):
+    return cv2.aruco.estimatePoseSingleMarkers(corners, 0.02, CAMERA_MATRIX, DIST_COEFFS)
+
+
 def detect_markers(original_image, masked_image, aruco_dict, verbose: bool):
     # detect ArUco markers in the input frame
     corners, ids, rejected = cv2.aruco.detectMarkers(
@@ -106,9 +121,7 @@ def detect_markers(original_image, masked_image, aruco_dict, verbose: bool):
     if len(corners) > 0:
         cv2.aruco.drawDetectedMarkers(original_image, corners, ids)
         for i in range(len(ids)):
-            rvec, tvec, marker_points = cv2.aruco.estimatePoseSingleMarkers(
-                corners[i], 0.02, CAMERA_MATRIX, DIST_COEFFS
-            )
+            rvec, tvec, marker_points = calculate_pose(corners[i])
 
             (rvec - tvec).any()
             cv2.aruco.drawAxis(original_image, CAMERA_MATRIX, DIST_COEFFS, rvec, tvec, 0.01)
