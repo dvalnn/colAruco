@@ -70,7 +70,7 @@ def mask_frame(frame: np.ndarray, color: str, delta: int = 12):
 def process_frame(original_image, target_color_channel, morphology_kernel_size: tuple = (10, 10)):
     # run a bilateralFilter to blur the original image - helps reducing noise for future masking
     blurred_image = cv2.bilateralFilter(original_image, 15, 75, 90)
-    
+
     # if the target color is "white", image is only converted to grayscale -- no further masking is needed
     if target_color_channel == "w":
         return original_image, cv2.cvtColor(blurred_image, cv2.COLOR_BGR2GRAY)
@@ -83,11 +83,11 @@ def process_frame(original_image, target_color_channel, morphology_kernel_size: 
     erosion_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, morphology_kernel_size)
 
     # image dilation with eliptical kernel will help close possible black spots inside the code squares
-    # created due to excessive glow in the center of the pixel (where the led is located)  
+    # created due to excessive glow in the center of the pixel (where the led is located)
     masked_image = cv2.dilate(masked_image, dilation_kernel, iterations=1)
-    
+
     # image erosion with rectangular kernel to try and correct the proportions of black and white squares
-    # in the masked/thresholded image -- white squares tend have bigger area than the black squares 
+    # in the masked/thresholded image -- white squares tend have bigger area than the black squares
     masked_image = cv2.erode(masked_image, erosion_kernel, iterations=1)
 
     return original_image, masked_image
@@ -149,15 +149,15 @@ def main(dict_type):
         if key == ord("d"):
             dict_type = dict_input_parser()
             aruco_dict = cv2.aruco.Dictionary_get(dict_type)
-        
+
         # if the 'i' key was pressed, pause the loop and parse the color mask input
         if key == ord("c"):
             target_color_channel = clr_input_parser()
-        
+
         # toggle verbose mode using either 'v' or 'p' keys
         if key == ord("v") or key == ord("p"):
             verbose = verbose is not True
-        
+
         # 'q' terminates execution
         if key == ord("q"):
             break
@@ -173,7 +173,7 @@ def main(dict_type):
 if __name__ == "__main__":
     # construct the argument parser and parse the arguments
     ap = argparse.ArgumentParser()
-    ap.add_argument("-c", "--camera", type=int, required=False, default=1, help="webcam index")
+    ap.add_argument("-c", "--camera", type=int, required=False, default=0, help="webcam index")
     ap.add_argument("-t", "--type", type=str, required=False, default="dict6_100", help="type of ArUCo tag to detect")
     args = vars(ap.parse_args())
 
@@ -211,16 +211,16 @@ if __name__ == "__main__":
 
     for cam_src in range(-args["camera"], 10):
         print("[INFO] starting video stream...")
-        VIDEO_SOURCE = VideoStream(src=cam_src , resolution=(1920, 1080)).start()
+        VIDEO_SOURCE = VideoStream(src=cam_src, resolution=(1920, 1080)).start()
         testFrame = VIDEO_SOURCE.read()
-        
+
         if testFrame is not None:
             break
 
-        print("[FATAL] camera feed not found on index {}".format(args["camera"] + i))
         VIDEO_SOURCE.stop()
 
     if testFrame is None:
+        print("[FATAL] camera feed not found")
         VIDEO_SOURCE.stop()
         quit()
 
@@ -243,7 +243,6 @@ if __name__ == "__main__":
     #     shape=(1, 5),
     #     buffer=np.array([0.05363329676093317, 0.3372325263081464, -0.005382727611648226, -0.02717982394149372, 0]),
     # )
-
 
     DIST_COEFFS = np.ndarray(
         shape=(1, 5),
