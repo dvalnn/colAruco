@@ -242,24 +242,24 @@ if __name__ == "__main__":
     #         npzfile[i] for i in ["mtx", "dist", "rvecs", "tvecs"]]
 
     # camera matrix and distance coefficients outputed by ros camera_calibration module -- needs propper integration
-    # CAMERA_MATRIX = np.ndarray(
-    #     shape=(3, 3),
-    #     buffer=np.array([874.7624752186383, 0, 282.6009074642533, 0, 874.5379489806799, 218.1223179333145, 0, 0, 1]),
-    # )
-
     CAMERA_MATRIX = np.ndarray(
         shape=(3, 3),
-        buffer=np.array([660.15908, 0.0, 312.77898, 0.0, 718.20931, 197.64162, 0.0, 0.0, 1.0]),
+        buffer=np.array([752.461885, 0, 363.097359, 0, 513.308335, 242.851570, 0, 0, 1]),
     )
 
-    # DIST_COEFFS = np.ndarray(
-    #     shape=(1, 5),
-    #     buffer=np.array([0.05363329676093317, 0.3372325263081464, -0.005382727611648226, -0.02717982394149372, 0]),
+    # CAMERA_MATRIX = np.ndarray(
+    #     shape=(3, 3),
+    #     buffer=np.array([660.15908, 0.0, 312.77898, 0.0, 718.20931, 197.64162, 0.0, 0.0, 1.0]),
     # )
 
     DIST_COEFFS = np.ndarray(
         shape=(1, 5),
-        buffer=np.array([0.071220, -0.145375, -0.016046, -0.003888, 0.000000]),
+        buffer=np.array([0.050106, 0.045766, -0.019956, 0.022466, 0.000000]),
     )
+
+    # DIST_COEFFS = np.ndarray(
+    #     shape=(1, 5),
+    #     buffer=np.array([0.071220, -0.145375, -0.016046, -0.003888, 0.000000]),
+    # )
 
     main(args["type"])
