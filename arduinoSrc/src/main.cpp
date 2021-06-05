@@ -7,7 +7,7 @@
 * LED STRIPE PROPERTIES
 */
 #define PIN 7              //The signal pin connected with Arduino
-#define LED_COUNT 120      //The amount of leds in the matrix
+#define LED_COUNT 100      //The amount of leds in the matrix
 #define LINE_LED_COUNT 10  //The amount of leds per line in the matrix
 
 /*
