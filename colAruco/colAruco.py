@@ -11,7 +11,7 @@ from time import time
 
 
 def arduino_write(serial_in: str):
-    arduino.write(bytes(serial_in, 'utf-8'))
+    arduino.write(bytes(serial_in, "utf-8"))
     arduino.flush()
 
 
@@ -23,18 +23,18 @@ def arduino_read():
 def fetch_aruco(id: str, size: str) -> str:
 
     completed_process = subprocess.run(
-        ["../arucoCodeGen/arucoDictTranslator", id, size], 
-        capture_output=True, 
-        text=True
+        ["../arucoCodeGen/arucoDictTranslator", id, size], capture_output=True, text=True
     )
     return completed_process.stdout.strip("\n").strip()
+
 
 def man():
     with open("colAruco_manual.txt", "r") as man:
         print("\n" + man.read() + "\n")
 
+
 def input_parser(usr_input: list) -> tuple:
-    #text input is always lowercase
+    # text input is always lowercase
     error = False
     input_flag = ""
     formated_input = ""
@@ -60,7 +60,7 @@ def input_parser(usr_input: list) -> tuple:
             if tmp in range(0, 256):
                 error = False
                 input_flag = "br"
-                formated_input += (str(tmp) + " ")
+                formated_input += str(tmp) + " "
             else:
                 print("[ERROR] brightness input is outside the accepted range (0-255)")
 
@@ -74,7 +74,7 @@ def input_parser(usr_input: list) -> tuple:
             if tmp in PREDEFINED_COLORS.keys():
                 error = False
                 input_flag = "cl"
-                formated_input += (PREDEFINED_COLORS[tmp] + " ")
+                formated_input += PREDEFINED_COLORS[tmp] + " "
             else:
                 try:
                     int(tmp, 16)
@@ -83,7 +83,7 @@ def input_parser(usr_input: list) -> tuple:
                 else:
                     error = False
                     input_flag = "cl"
-                    formated_input += (tmp + " ")
+                    formated_input += tmp + " "
 
     elif "code" in usr_input:
         error = True
@@ -116,9 +116,15 @@ def main(arduino: serial.Serial):
         print("\n[INFO] Waiting for arduino response")
         while True:
             serial_out = arduino_read()
-            serial_out = [string.strip("\\n\\rb'") for string in serial_out] #remove attached noise and tags that serial out outputs
+            # remove attached noise and tags that serial out outputs
+            serial_out = [string.strip("\\n\\rb'") for string in serial_out]
 
-            if len(serial_out) != 0 and serial_out[2][-1] != "0":
+            if len(serial_out) != 0:
+                # checking to see if code size is 0
+                size_check = ["size" if string.count("size") else None for string in serial_out]
+                if any(size_check) and serial_out[size_check.index("size")][-1] == "0":
+                    # if code size is 0, continues de loop and waits for the value to update
+                    continue
                 break
 
             if time() - loop_start >= 3:  # times out so that the code doesn't get stuck waiting for a response
@@ -136,16 +142,16 @@ def main(arduino: serial.Serial):
                 quit()
 
             if not len(text):
-                print("\033[F\033[K", end="") #cursor up one line and clear it to the end
+                print("\033[F\033[K", end="")  # cursor up one line and clear it to the end
                 continue
 
-            if any(string in text for string in ['q', 'quit', 'exit']):
+            if any(string in text for string in ["q", "quit", "exit"]):
                 print("\033[F\033[K", end="")
                 print("[INFO] closing serial connection")
                 arduino.close()
                 quit()
-            
-            if any(string in text for string in ['-h', '--help', 'man']):
+
+            if any(string in text for string in ["-h", "--help", "man"]):
                 man()
                 continue
 
@@ -156,7 +162,7 @@ def main(arduino: serial.Serial):
                 arduino_write(input_flag + " " + formated_input)
                 break
             elif error:
-                print("\033[3F", end="\033[K") #cursor 2 lines up and clear line
+                print("\033[3F", end="\033[K")  # cursor 2 lines up and clear line
                 pass
             else:
                 print("[INFO] Input carries no meaning, arduino will not be updated", end="\033[F\033[K")
@@ -168,14 +174,17 @@ def main(arduino: serial.Serial):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("-p", "--port",
-                    default="/dev/ttyACM0",
-                    help="Serial port to attempt arduino connection - defaults to /dev/ttyACM0")
+    ap.add_argument(
+        "-p",
+        "--port",
+        default="/dev/ttyACM0",
+        help="Serial port to attempt arduino connection - defaults to /dev/ttyACM0",
+    )
 
     args = vars(ap.parse_args())
 
     try:
-        arduino = serial.Serial(port=args["port"], baudrate=9600, timeout=.1)
+        arduino = serial.Serial(port=args["port"], baudrate=9600, timeout=0.1)
     except:
         print("\n[FATAL] Couldn't establish serial connection on port", args["port"])
         quit()

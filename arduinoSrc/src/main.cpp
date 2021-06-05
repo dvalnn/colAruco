@@ -7,14 +7,13 @@
 * LED STRIPE PROPERTIES
 */
 #define PIN 7              //The signal pin connected with Arduino
-#define LED_COUNT 100      //The amount of leds in the matrix
+#define LED_COUNT 120      //The amount of leds in the matrix
 #define LINE_LED_COUNT 10  //The amount of leds per line in the matrix
 
 /*
 * PREDEFINED LED COLORS
 */
 #define OFF 0x000000  //color black - leds are off
-// #define OFFCOL(color) (0xFFFFFF - color) //?Contrasting color to facilitate code detection
 #define OFFCOL(color) 0x000000
 
 /*
@@ -38,7 +37,7 @@ void resetLedStrip();
 
 void testLedStrip();
 
-bool inputParser(uint32_t *color, uint8_t aruco[], uint8_t *size, uint8_t *brightness);
+int inputParser(uint32_t *color, uint8_t aruco[], uint8_t *size, uint8_t *brightness);
 void switchColor(uint32_t *color, String userInput);
 
 void applyAruco(uint8_t arCode[], uint8_t size, uint32_t color);
@@ -87,7 +86,9 @@ void loop() {
         initialized = true;
     }
 
-    if (inputParser(&colorOnDisplay, arucoOnDisplay, &arucoCodeSize, &brightnessOnDiplay)) {
+    int inputResult = inputParser(&colorOnDisplay, arucoOnDisplay, &arucoCodeSize, &brightnessOnDiplay);
+
+    if (inputResult) {
         Serial.print("Brightness value: ");
         Serial.println(brightnessOnDiplay, DEC);
         Serial.print("Color on display: ");
@@ -101,6 +102,12 @@ void loop() {
         }
         Serial.println();
         Serial.flush();
+
+        if (inputResult == -1) {
+            Serial.println(" --- testing led strip --- ");
+            testLedStrip();
+            delay(2000);
+        }
 
         resetLedStrip();
         leds.setBrightness(brightnessOnDiplay);
@@ -117,22 +124,21 @@ void loop() {
  * @param brightness ptr to current brightness value to update
  * @return true if any values were updated else false
  */
-bool inputParser(uint32_t *color, uint8_t aruco[], uint8_t *size, uint8_t *brightness) {
+int inputParser(uint32_t *color, uint8_t aruco[], uint8_t *size, uint8_t *brightness) {
     if (Serial.available() > 0) {
         String flag = Serial.readStringUntil(' ');
 
-        if (flag.indexOf("test") >= 0) {
-            testLedStrip();
-            return 1;
-        }
+        if (flag.indexOf("test") >= 0)
+            return -1;
+
         if (flag.indexOf("save") >= 0) {
             saveToEEPROM(aruco, *size, *brightness, *color);
-            Serial.println("Current settings saved to EEPROM storage.\n");
+            Serial.println("\nCurrent settings saved to EEPROM storage.\n");
             return 1;
         }
         if (flag.indexOf("load") >= 0) {
             loadFromEEPROM(aruco, size, brightness, color);
-            Serial.println("Previous settings loaded from EEPROM storage.\n");
+            Serial.println("\nPrevious settings loaded from EEPROM storage.\n");
             return 1;
         }
         if (flag.indexOf("code") >= 0) {
@@ -227,16 +233,11 @@ void resetLedStrip() {
 
 void testLedStrip() {
     resetLedStrip();
-
+    leds.setBrightness(255);
     for (byte i = 0; i < LED_COUNT; i++) {
-        for (byte i = 0; i < LED_COUNT; i++) {
-            leds.setPixelColor(i, OFF);
-            leds.show();
-        }
+        leds.setPixelColor(i, 0xffffff);
+        leds.show();
     }
-    delay(1);
-
-    resetLedStrip();
 }
 
 /**
