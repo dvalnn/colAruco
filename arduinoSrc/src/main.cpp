@@ -36,6 +36,8 @@ Adafruit_NeoPixel leds = Adafruit_NeoPixel(LED_COUNT, PIN, NEO_GRB + NEO_KHZ800)
 void clearLEDs();
 void resetLedStrip();
 
+void testLedStrip();
+
 bool inputParser(uint32_t *color, uint8_t aruco[], uint8_t *size, uint8_t *brightness);
 void switchColor(uint32_t *color, String userInput);
 
@@ -119,6 +121,10 @@ bool inputParser(uint32_t *color, uint8_t aruco[], uint8_t *size, uint8_t *brigh
     if (Serial.available() > 0) {
         String flag = Serial.readStringUntil(' ');
 
+        if (flag.indexOf("test") >= 0) {
+            testLedStrip();
+            return 1;
+        }
         if (flag.indexOf("save") >= 0) {
             saveToEEPROM(aruco, *size, *brightness, *color);
             Serial.println("Current settings saved to EEPROM storage.\n");
@@ -217,6 +223,20 @@ void resetLedStrip() {
     leds.begin();
     clearLEDs();
     leds.show();
+}
+
+void testLedStrip() {
+    resetLedStrip();
+
+    for (byte i = 0; i < LED_COUNT; i++) {
+        for (byte i = 0; i < LED_COUNT; i++) {
+            leds.setPixelColor(i, OFF);
+            leds.show();
+        }
+    }
+    delay(1);
+
+    resetLedStrip();
 }
 
 /**
