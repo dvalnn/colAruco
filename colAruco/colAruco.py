@@ -3,7 +3,6 @@
 import serial
 import subprocess
 import argparse
-from sys import exit
 from time import time
 
 
@@ -45,6 +44,9 @@ def input_parser(usr_input: list) -> tuple:
 
     elif "load" in usr_input:
         input_flag = "load"
+
+    elif "test" in usr_input:
+        input_flag = "test"
 
     elif "br" in usr_input:
         error = True
@@ -131,7 +133,7 @@ def main(arduino: serial.Serial):
                 text = input("User input: ").lower().strip("\n").strip().split()  # Taking input from user
             except EOFError:
                 arduino.close()
-                exit(0)
+                quit()
 
             if not len(text):
                 print("\033[F\033[K", end="") #cursor up one line and clear it to the end
@@ -141,7 +143,7 @@ def main(arduino: serial.Serial):
                 print("\033[F\033[K", end="")
                 print("[INFO] closing serial connection")
                 arduino.close()
-                exit(0)
+                quit()
             
             if any(string in text for string in ['-h', '--help', 'man']):
                 man()
@@ -159,8 +161,10 @@ def main(arduino: serial.Serial):
             else:
                 print("[INFO] Input carries no meaning, arduino will not be updated", end="\033[F\033[K")
 
+
 ###################################################################################################
 ######################################## DRIVER CODE ##############################################
+
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
@@ -174,7 +178,7 @@ if __name__ == "__main__":
         arduino = serial.Serial(port=args["port"], baudrate=9600, timeout=.1)
     except:
         print("\n[FATAL] Couldn't establish serial connection on port", args["port"])
-        exit(0)
+        quit()
     else:
         print("\n[INFO] Arduino connection successfull")
 
