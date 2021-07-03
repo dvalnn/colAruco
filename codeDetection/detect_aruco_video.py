@@ -218,10 +218,6 @@ if __name__ == "__main__":
     # load the aruco dictionary and create detection parameters
     ARUCO_PARAMS = cv2.aruco.DetectorParameters_create()
 
-    print("[INFO] starting video stream...")
-    VIDEO_SOURCE = VideoStream(src=args["camera"], resolution=(1920, 1080)).start()
-    testFrame = VIDEO_SOURCE.read()
-
     for cam_src in range(-args["camera"], 10):
         print("[INFO] starting video stream...")
         VIDEO_SOURCE = VideoStream(src=cam_src, resolution=(1920, 1080)).start()
