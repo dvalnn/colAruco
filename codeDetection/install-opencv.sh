@@ -32,9 +32,9 @@ OPENCV_CONTRIB='YES'          # Install OpenCV's extra modules (YES/NO)
 # 1. KEEP UBUNTU OR DEBIAN UP TO DATE
 
 sudo apt-get -y update
-# sudo apt-get -y upgrade       # Uncomment to install new versions of packages currently installed
-# sudo apt-get -y dist-upgrade  # Uncomment to handle changing dependencies with new vers. of pack.
-# sudo apt-get -y autoremove    # Uncomment to remove packages that are now no longer needed
+sudo apt-get -y upgrade       # Uncomment to install new versions of packages currently installed
+sudo apt-get -y dist-upgrade  # Uncomment to handle changing dependencies with new vers. of pack.
+sudo apt-get -y autoremove    # Uncomment to remove packages that are now no longer needed
 
 
 # 2. INSTALL THE DEPENDENCIES
