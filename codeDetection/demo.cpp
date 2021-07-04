@@ -1,22 +1,29 @@
+#include <array>
 #include <iomanip>
 #include <iostream>
 #include <map>
 #include <opencv2/aruco.hpp>
-#include <opencv2/core/utility.hpp>
+#include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
 #include <opencv2/videoio.hpp>
 #include <string>
 
 int dictInput();
 char colorInput();
 auto calculatePose();
-auto maskFrame();
 void detectMarkers();
-cv::Mat processFrame();
+void maskFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, int delta = 12);
+void processFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, cv::Size kSize = cv::Size(10, 10));
+template <typename T, size_t n, size_t m>
+using matrix = std::array<std::array<T, m>, n>;
 
 // Global variables
-std::map<std::string, int> supportedArucoTypes{
+const matrix<float, 3, 3> cameraMatrix = {752.461885, 0, 363.097359, 0, 513.308335, 242.851570, 0, 0, 1};
+const matrix<float, 1, 5> distCoeffs = {0.050106, 0.045766, -0.019956, 0.022466, 0.000000};
+
+const std::map<std::string, int> supportedArucoTypes{
     {"4_50", cv::aruco::DICT_4X4_50},
     {"4_100", cv::aruco::DICT_4X4_100},
     {"4_250", cv::aruco::DICT_4X4_250},
@@ -51,7 +58,7 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    auto arucoDict = cv::aruco::getPredefinedDictionary(supportedArucoTypes[parser.get<std::string>("dict")]);
+    auto arucoDict = cv::aruco::getPredefinedDictionary(supportedArucoTypes.at(parser.get<std::string>("dict")));
     auto ARUCO_PARAMS = cv::aruco::DetectorParameters::create();
 
     cv::Mat frame, maskedFrame;
@@ -76,10 +83,11 @@ int main(int argc, char **argv) {
             break;
         }
 
-        // maskedFrame = processFrame();
+        processFrame(frame, maskedFrame, targetColorCh);
         // detectMarkers();
 
         cv::imshow("Live", frame);
+        cv::imshow("ProcessedFrame", maskedFrame);
         // cv::imshow("Processed Image", maskedFrame);
 
         //----------------------- input waitkeys -----------------------
@@ -113,14 +121,14 @@ int dictInput() {
 
         if ((userInput == "-h" or userInput == "-help") and std::cin.peek() == '\n' and std::cin.good()) {
             std::cout << "Supported dict values (usage: -d=<value>)\n";
-            for (auto const pair : supportedArucoTypes)
-                std::cout << pair.first << std::endl;
+            for (auto pair : supportedArucoTypes)
+                std::cout << " -- \"" << pair.first << "\"" << std::endl;
         } else {
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }
     }
-    return supportedArucoTypes[userInput];
+    return supportedArucoTypes.at(userInput);
 }
 
 char colorInput() {
@@ -138,8 +146,33 @@ char colorInput() {
     return userInput;
 }
 
-// void detectMarkers() {
-// }
+void maskFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, int delta = 12) {
+    
+}
 
-// cv::Mat processFrame() {
+void processFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, cv::Size kSize) {
+    // run a bilateralFilter to blur the original image - helps reducing noise for future masking
+    cv::bilateralFilter(inFrame, outFrame, 15, 75, 90);
+
+    // if the target color is "white", image is only converted to grayscale -- no further masking is needed
+    if (targetClr == 'w')
+        return cv::cvtColor(outFrame, outFrame, cv::COLOR_BGR2GRAY);
+
+    // threshold image relative to the selected color channel
+    // masked_image = mask_frame(blurred_image, target_color_channel)
+
+    // cv::getStructuringElement(cv::MORPH_ELLIPSE, kernelSize);
+    cv::Mat dilKernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, kSize);
+    cv::Mat erKernel = cv::getStructuringElement(cv::MORPH_RECT, kSize);
+
+    // image dilation with eliptical kernel will help close possible black spots inside the code squares
+    // created due to excessive glow in the center of the pixel (where the led is located)
+    cv::dilate(outFrame, outFrame, dilKernel);
+
+    // image erosion with rectangular kernel to try and correct the proportions of black and white squares
+    // in the masked/thresholded image -- white squares tend have bigger area than the black squares
+    cv::erode(outFrame, outFrame, erKernel);
+}
+
+// void detectMarkers() {
 // }
