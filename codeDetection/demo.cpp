@@ -84,11 +84,11 @@ int main(int argc, char **argv) {
         }
 
         processFrame(frame, maskedFrame, targetColorCh);
-        // detectMarkers();
+        detectMarkers();
 
         cv::imshow("Live", frame);
         cv::imshow("ProcessedFrame", maskedFrame);
-        // cv::imshow("Processed Image", maskedFrame);
+        
 
         //----------------------- input waitkeys -----------------------
         int key = cv::waitKey(1) & 0xff;
@@ -146,8 +146,29 @@ char colorInput() {
     return userInput;
 }
 
-void maskFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, int delta = 12) {
-    
+void maskFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, int delta) {
+    cv::Mat bgr[3];
+    cv::split(inFrame, bgr);
+
+    std::map<char, cv::Mat> clrChannels{{'r', bgr[2]}, {'g', bgr[1]}, {'b', bgr[0]}};
+
+    cv::Mat targetCh = clrChannels[targetClr];
+    cv::Mat betaCh, gammaCh;
+
+    for (auto pair : clrChannels) {
+        if (pair.first == targetClr)
+            continue;
+        if (betaCh.empty())
+            betaCh = clrChannels[pair.first];
+        else
+            gammaCh = clrChannels[pair.first];
+    }
+
+    cv::Mat colorMask = (targetCh > (betaCh + delta)) & (targetCh > (gammaCh + delta));
+    cv::Mat falsePositives = (betaCh < 255 - delta) & (gammaCh < 255 - delta);
+
+    outFrame = cv::Mat::zeros(targetCh.rows, targetCh.cols, targetCh.type());
+    outFrame = (255 * (colorMask & falsePositives));
 }
 
 void processFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, cv::Size kSize) {
@@ -160,6 +181,7 @@ void processFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, cv:
 
     // threshold image relative to the selected color channel
     // masked_image = mask_frame(blurred_image, target_color_channel)
+    maskFrame(outFrame, outFrame, targetClr);
 
     // cv::getStructuringElement(cv::MORPH_ELLIPSE, kernelSize);
     cv::Mat dilKernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, kSize);
