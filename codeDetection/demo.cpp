@@ -3,25 +3,29 @@
 #include <iostream>
 #include <map>
 #include <opencv2/aruco.hpp>
-#include <opencv2/core.hpp>
-#include <opencv2/highgui.hpp>
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/videoio.hpp>
+#include <opencv2/opencv.hpp>
 #include <string>
+#include <vector>
 
 int dictInput();
 char colorInput();
-auto calculatePose();
-void detectMarkers();
 void maskFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, int delta = 12);
+void detectMarkers(cv::Mat &original, cv::Mat &masked, cv::Ptr<cv::aruco::Dictionary> arucoDict, bool verbose);
 void processFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, cv::Size kSize = cv::Size(10, 10));
+
+#define markerLength 0.01
+
 template <typename T, size_t n, size_t m>
 using matrix = std::array<std::array<T, m>, n>;
 
 // Global variables
-const matrix<float, 3, 3> cameraMatrix = {752.461885, 0, 363.097359, 0, 513.308335, 242.851570, 0, 0, 1};
-const matrix<float, 1, 5> distCoeffs = {0.050106, 0.045766, -0.019956, 0.022466, 0.000000};
+float data1[] = {752.461885, 0, 363.097359, 0, 513.308335, 242.851570, 0, 0, 1};
+const cv::Mat CAMERA_MATRIX = cv::Mat(3, 3, CV_32F, data1);
+
+float data2[] = {0.050106, 0.045766, -0.019956, 0.022466, 0.000000};
+const cv::Mat DIST_COEFFS = cv::Mat(1, 5, CV_32F, data2);
+
+auto ARUCO_PARAMS = cv::aruco::DetectorParameters::create();
 
 const std::map<std::string, int> supportedArucoTypes{
     {"4_50", cv::aruco::DICT_4X4_50},
@@ -59,7 +63,6 @@ int main(int argc, char **argv) {
     }
 
     auto arucoDict = cv::aruco::getPredefinedDictionary(supportedArucoTypes.at(parser.get<std::string>("dict")));
-    auto ARUCO_PARAMS = cv::aruco::DetectorParameters::create();
 
     cv::Mat frame, maskedFrame;
     cv::VideoCapture vidCap;
@@ -84,11 +87,10 @@ int main(int argc, char **argv) {
         }
 
         processFrame(frame, maskedFrame, targetColorCh);
-        detectMarkers();
+        detectMarkers(frame, maskedFrame, arucoDict, verbose);
 
         cv::imshow("Live", frame);
         cv::imshow("ProcessedFrame", maskedFrame);
-        
 
         //----------------------- input waitkeys -----------------------
         int key = cv::waitKey(1) & 0xff;
@@ -196,5 +198,21 @@ void processFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, cv:
     cv::erode(outFrame, outFrame, erKernel);
 }
 
-// void detectMarkers() {
-// }
+void detectMarkers(cv::Mat &original, cv::Mat &masked, cv::Ptr<cv::aruco::Dictionary> arucoDict, bool verbose) {
+    std::vector<int> ids;
+    std::vector<cv::Vec3d> rvecs, tvecs;
+    std::vector<std::vector<cv::Point2f> > corners, rejected;
+
+    cv::aruco::detectMarkers(masked, arucoDict, corners, ids, ARUCO_PARAMS, rejected, CAMERA_MATRIX, DIST_COEFFS);
+
+    if (not corners.empty()) {
+        cv::aruco::drawDetectedMarkers(original, corners, ids);
+        cv::aruco::estimatePoseSingleMarkers(corners, markerLength, CAMERA_MATRIX, DIST_COEFFS, rvecs, tvecs);
+
+        for (int i = 0; i < rvecs.size(); i++) {
+            auto rvec = rvecs[i];
+            auto tvec = tvecs[i];
+            cv::aruco::drawAxis(original, CAMERA_MATRIX, DIST_COEFFS, rvec, tvec, 0.01);
+        }
+    }
+}
