@@ -7,18 +7,10 @@
 #include <string>
 #include <vector>
 
-int dictInput();
-char colorInput();
-void maskFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, int delta = 12);
-void detectMarkers(cv::Mat &original, cv::Mat &masked, cv::Ptr<cv::aruco::Dictionary> arucoDict, bool verbose);
-void processFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, cv::Size kSize = cv::Size(10, 10));
+// ####################################################################################################################
 
-#define markerLength 0.01
+#define DELTA_DEFAULT 12
 
-template <typename T, size_t n, size_t m>
-using matrix = std::array<std::array<T, m>, n>;
-
-// Global variables
 float data1[] = {752.461885, 0, 363.097359, 0, 513.308335, 242.851570, 0, 0, 1};
 const cv::Mat CAMERA_MATRIX = cv::Mat(3, 3, CV_32F, data1);
 
@@ -43,77 +35,7 @@ const std::map<std::string, int> supportedArucoTypes{
     {"original", cv::aruco::DICT_ARUCO_ORIGINAL},
 };
 
-int main(int argc, char **argv) {
-    const std::string keys =
-        "{help h usage ?   |            | print this message                                }"
-        "{camera c         |      0     | webcam index                                      }"
-        "{dict d           |   6_1000   | Type and size of aruco dict to use for detection  }";
-
-    cv::CommandLineParser parser(argc, argv, keys);
-    parser.about("opencv video stream aruco detection");
-
-    if (parser.has("help")) {
-        parser.printMessage();
-        return 0;
-    }
-
-    if (!supportedArucoTypes.contains(parser.get<std::string>("dict"))) {
-        std::cout << "[FATAL] aruco tag type {dict" << parser.get<std::string>("dict") << "} is not supported\n";
-        return -1;
-    }
-
-    auto arucoDict = cv::aruco::getPredefinedDictionary(supportedArucoTypes.at(parser.get<std::string>("dict")));
-
-    cv::Mat frame, maskedFrame;
-    cv::VideoCapture vidCap;
-
-    std::cout << "[INFO] starting video stream. Cam index " << parser.get<int>("camera") << "\n";
-    vidCap.open(parser.get<int>("camera"), cv::CAP_ANY);
-
-    if (!vidCap.isOpened()) {
-        std::cout << "[FATAL] unable to open video capture\n";
-        return -1;
-    }
-
-    char targetColorCh = colorInput();
-    bool verbose = false;
-
-    while (true) {
-        vidCap.read(frame);
-
-        if (frame.empty()) {
-            std::cout << "[FATAL] blank frame grabbed\n";
-            break;
-        }
-
-        processFrame(frame, maskedFrame, targetColorCh);
-        detectMarkers(frame, maskedFrame, arucoDict, verbose);
-
-        cv::imshow("Live", frame);
-        cv::imshow("ProcessedFrame", maskedFrame);
-
-        //----------------------- input waitkeys -----------------------
-        int key = cv::waitKey(1) & 0xff;
-        switch (key) {
-            case 'd':
-                arucoDict = cv::aruco::getPredefinedDictionary(dictInput());
-                break;
-
-            case 'c':
-                targetColorCh = colorInput();
-                break;
-
-            case 'v':
-                verbose = verbose != true;
-                break;
-
-            case 'q':
-                return 0;
-        }
-    }
-
-    return 0;
-}
+// ####################################################################################################################
 
 int dictInput() {
     std::string userInput;
@@ -148,7 +70,7 @@ char colorInput() {
     return userInput;
 }
 
-void maskFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, int delta) {
+void maskFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, int delta = DELTA_DEFAULT) {
     cv::Mat bgr[3];
     cv::split(inFrame, bgr);
 
@@ -173,41 +95,36 @@ void maskFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, int de
     outFrame = (255 * (colorMask & falsePositives));
 }
 
-void processFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, cv::Size kSize) {
-    // run a bilateralFilter to blur the original image - helps reducing noise for future masking
-    cv::bilateralFilter(inFrame, outFrame, 15, 75, 90);
-
-    // if the target color is "white", image is only converted to grayscale -- no further masking is needed
+void processFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, cv::Size kSize = cv::Size(10, 10)) {
+    // normal color for the codes -- handled by default by openCV
     if (targetClr == 'w')
         return cv::cvtColor(outFrame, outFrame, cv::COLOR_BGR2GRAY);
 
+    // run a bilateralFilter to blur the original image - helps reducing noise for future masking
+    cv::bilateralFilter(inFrame, outFrame, 5, 75, 90);  //! needs revision
+
     // threshold image relative to the selected color channel
-    // masked_image = mask_frame(blurred_image, target_color_channel)
     maskFrame(outFrame, outFrame, targetClr);
 
-    // cv::getStructuringElement(cv::MORPH_ELLIPSE, kernelSize);
+    // kernels for dilation and erosion operations
     cv::Mat dilKernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, kSize);
     cv::Mat erKernel = cv::getStructuringElement(cv::MORPH_RECT, kSize);
 
-    // image dilation with eliptical kernel will help close possible black spots inside the code squares
-    // created due to excessive glow in the center of the pixel (where the led is located)
+    //image dilation and erosion for eliminating noise created by the color mask
     cv::dilate(outFrame, outFrame, dilKernel);
-
-    // image erosion with rectangular kernel to try and correct the proportions of black and white squares
-    // in the masked/thresholded image -- white squares tend have bigger area than the black squares
     cv::erode(outFrame, outFrame, erKernel);
 }
 
-void detectMarkers(cv::Mat &original, cv::Mat &masked, cv::Ptr<cv::aruco::Dictionary> arucoDict, bool verbose) {
+void detectMarkers(cv::Mat &original, cv::Mat &masked, cv::Ptr<cv::aruco::Dictionary> dict, float mLen) {
     std::vector<int> ids;
     std::vector<cv::Vec3d> rvecs, tvecs;
     std::vector<std::vector<cv::Point2f> > corners, rejected;
 
-    cv::aruco::detectMarkers(masked, arucoDict, corners, ids, ARUCO_PARAMS, rejected, CAMERA_MATRIX, DIST_COEFFS);
+    cv::aruco::detectMarkers(masked, dict, corners, ids, ARUCO_PARAMS, rejected, CAMERA_MATRIX, DIST_COEFFS);
 
     if (not corners.empty()) {
         cv::aruco::drawDetectedMarkers(original, corners, ids);
-        cv::aruco::estimatePoseSingleMarkers(corners, markerLength, CAMERA_MATRIX, DIST_COEFFS, rvecs, tvecs);
+        cv::aruco::estimatePoseSingleMarkers(corners, mLen, CAMERA_MATRIX, DIST_COEFFS, rvecs, tvecs);
 
         for (int i = 0; i < rvecs.size(); i++) {
             auto rvec = rvecs[i];
@@ -215,4 +132,88 @@ void detectMarkers(cv::Mat &original, cv::Mat &masked, cv::Ptr<cv::aruco::Dictio
             cv::aruco::drawAxis(original, CAMERA_MATRIX, DIST_COEFFS, rvec, tvec, 0.01);
         }
     }
+}
+
+// ####################################################################################################################
+
+std::string arucoRecLoop(cv::VideoCapture &vidCap, std::string dict, float mLen) {
+    cv::Mat frame, maskedFrame;
+
+    char targetColorCh = colorInput();
+    auto arucoDict = cv::aruco::getPredefinedDictionary(supportedArucoTypes.at(dict));
+
+    while (true) {
+        vidCap.read(frame);
+
+        if (frame.empty()) {
+            std::cout << "[FATAL] blank frame grabbed.\n";
+            break;
+        }
+
+        processFrame(frame, maskedFrame, targetColorCh);
+        detectMarkers(frame, maskedFrame, arucoDict, mLen);
+
+        cv::imshow("Live", frame);
+        cv::imshow("Color Mask", maskedFrame);
+
+        //----------------------- input waitkeys -----------------------
+        int key = cv::waitKey(1) & 0xff;
+        switch (key) {
+            case 'd':
+                arucoDict = cv::aruco::getPredefinedDictionary(dictInput());
+                break;
+
+            case 'c':
+                targetColorCh = colorInput();
+                break;
+
+            case 'q':
+                return "";
+        }
+    }
+
+    return "";
+}
+
+int main(int argc, char **argv) {
+    const std::string keys =
+        "{help h    |        | print this message                                               }"
+        "{dict d    | 6_1000 | dictionary used for code detection                               }"
+        "{lenght l  |  0.010 | square's side lenght for each code (in meters)                   }"
+        "{camera c  |        | manually set webcam path in case it isn't being found by default }";
+
+    cv::CommandLineParser parser(argc, argv, keys);
+    parser.about("opencv video stream aruco detection");
+
+    if (parser.has("help")) {
+        parser.printMessage();
+        return 0;
+    }
+
+    if (!supportedArucoTypes.contains(parser.get<std::string>("dict"))) {
+        std::cout << "[FATAL] aruco tag of type {dict" << parser.get<std::string>("dict") << "} is not supported\n";
+        return -1;
+    }
+
+    cv::VideoCapture vidCap;
+
+    if (parser.has("camera")) {
+        std::cout << "[INFO] Using specified webcam path {" << parser.get<std::string>("camera") << "}\n";
+        vidCap.open(parser.get<std::string>("camera"), cv::CAP_ANY);
+    } else {
+        for (short i = 0; i <= 10; i++) {
+            std::cout << "[INFO] Searching for available video capture device on index " << i << "\n";
+            vidCap.open(i);
+
+            if (vidCap.isOpened())
+                break;
+
+            if (i == 10)
+                return 0;
+        }
+    }
+
+    arucoRecLoop(vidCap, parser.get<std::string>("dict"), std::abs(parser.get<float>("lenght")));
+
+    return 0;
 }
