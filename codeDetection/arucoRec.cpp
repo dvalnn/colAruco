@@ -98,10 +98,11 @@ void maskFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, int de
 void processFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, cv::Size kSize = cv::Size(10, 10)) {
     // normal color for the codes -- handled by default by openCV
     if (targetClr == 'w')
-        return cv::cvtColor(outFrame, outFrame, cv::COLOR_BGR2GRAY);
+        return cv::cvtColor(inFrame, outFrame, cv::COLOR_BGR2GRAY);
 
     // run a bilateralFilter to blur the original image - helps reducing noise for future masking
     cv::bilateralFilter(inFrame, outFrame, 5, 75, 90);  //! needs revision
+    cv::cvtColor(outFrame, outFrame, cv::COLOR_BGR2GRAY);
 
     // threshold image relative to the selected color channel
     maskFrame(outFrame, outFrame, targetClr);
@@ -144,6 +145,7 @@ void arucoRecLoop(cv::VideoCapture &vidCap, std::string dict, float mLen) {
 
     while (true) {
         vidCap.read(frame);
+        std::cout << "\rGrabbing frames ... " << std::flush;
 
         if (frame.empty()) {
             std::cout << "[FATAL] blank frame grabbed.\n";
@@ -160,14 +162,17 @@ void arucoRecLoop(cv::VideoCapture &vidCap, std::string dict, float mLen) {
         int key = cv::waitKey(1) & 0xff;
         switch (key) {
             case 'd':
+                std::cout << "\n";
                 arucoDict = cv::aruco::getPredefinedDictionary(dictInput());
                 break;
 
             case 'c':
+                std::cout << "\n";
                 targetColorCh = colorInput();
                 break;
 
             case 'q':
+                std::cout << "\n";
                 return;
         }
     }
