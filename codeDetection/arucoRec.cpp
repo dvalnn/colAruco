@@ -61,12 +61,17 @@ int dictInput(int currDict) {
     return supportedArucoTypes.at(userInput);
 }
 
-char colorInput() {
+char colorInput(char currClr) {
     char userInput = '0';
     const std::string allowedColors = "rgbw";
     while (allowedColors.find(userInput) == std::string::npos) {
         std::cout << "Input a color channel to mask (r/g/b/w): ";
         std::cin >> userInput;
+
+        if (std::cin.eof()) {
+            std::cout << "\u001b[2K";
+            return currClr ? currClr : 'w';
+        }
 
         if (not std::cin.peek() == '\n' and not(std::cin.good())) {
             std::cin.clear();
@@ -108,7 +113,6 @@ void processFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, cv:
 
     // run a bilateralFilter to blur the original image - helps reducing noise for future masking
     cv::bilateralFilter(inFrame, outFrame, 5, 75, 90);  //! needs revision
-    cv::cvtColor(outFrame, outFrame, cv::COLOR_BGR2GRAY);
 
     // threshold image relative to the selected color channel
     maskFrame(outFrame, outFrame, targetClr);
@@ -146,7 +150,7 @@ void detectMarkers(cv::Mat &original, cv::Mat &masked, cv::Ptr<cv::aruco::Dictio
 void arucoRecLoop(cv::VideoCapture &vidCap, std::string dict, float mLen) {
     cv::Mat frame, maskedFrame;
 
-    char targetColorCh = colorInput();
+    char targetColorCh = colorInput(targetColorCh);
     int dictIndex = supportedArucoTypes.at(dict);
     auto arucoDict = cv::aruco::getPredefinedDictionary(dictIndex);
 
@@ -176,7 +180,7 @@ void arucoRecLoop(cv::VideoCapture &vidCap, std::string dict, float mLen) {
 
             case 'c':
                 std::cout << "\n";
-                targetColorCh = colorInput();
+                targetColorCh = colorInput(targetColorCh);
                 break;
 
             case 'q':
