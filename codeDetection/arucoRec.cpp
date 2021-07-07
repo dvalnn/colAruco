@@ -1,11 +1,12 @@
-#include <array>
-#include <iomanip>
-#include <iostream>
 #include <map>
-#include <opencv2/aruco.hpp>
-#include <opencv2/opencv.hpp>
+#include <array>
 #include <string>
 #include <vector>
+#include <iomanip>
+#include <iostream>
+
+#include <opencv2/aruco.hpp>
+#include <opencv2/opencv.hpp>
 
 // ####################################################################################################################
 
