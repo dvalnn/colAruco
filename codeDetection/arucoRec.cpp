@@ -1,15 +1,16 @@
-#include <array>
-#include <iomanip>
-#include <iostream>
 #include <map>
-#include <opencv2/aruco.hpp>
-#include <opencv2/opencv.hpp>
+#include <array>
 #include <string>
 #include <vector>
+#include <iomanip>
+#include <iostream>
+
+#include <opencv2/aruco.hpp>
+#include <opencv2/opencv.hpp>
 
 // ####################################################################################################################
 
-#define DELTA_DEFAULT 12
+#define DELTA 12
 
 float data1[] = {752.461885, 0, 363.097359, 0, 513.308335, 242.851570, 0, 0, 1};
 const cv::Mat CAMERA_MATRIX = cv::Mat(3, 3, CV_32F, data1);
@@ -37,30 +38,43 @@ const std::map<std::string, int> supportedArucoTypes{
 
 // ####################################################################################################################
 
-int dictInput() {
+int dictInput(int currDict) {
     std::string userInput;
     while (not supportedArucoTypes.contains(userInput)) {
         std::cout << "Input a aruco dictionary type do detect (suported types: -h / --help): ";
         std::cin >> std::setw(10) >> userInput;
 
+        if (std::cin.eof()) {
+            std::cin.clear();
+            std::cin.putback('\n');
+            std::cout << "\u001b[2K\r";
+        }
+
         if ((userInput == "-h" or userInput == "-help") and std::cin.peek() == '\n' and std::cin.good()) {
             std::cout << "Supported dict values (usage: -d=<value>)\n";
             for (auto pair : supportedArucoTypes)
-                std::cout << " -- \"" << pair.first << "\"" << std::endl;
-        } else {
-            std::cin.clear();
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                std::cout << " -- \"" << pair.first << "\"\n";
+            continue;
         }
+
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     }
     return supportedArucoTypes.at(userInput);
 }
 
-char colorInput() {
+char colorInput(char currClr) {
     char userInput = '0';
     const std::string allowedColors = "rgbw";
     while (allowedColors.find(userInput) == std::string::npos) {
         std::cout << "Input a color channel to mask (r/g/b/w): ";
         std::cin >> userInput;
+
+        if (std::cin.eof()) {
+            std::cin.clear();
+            std::cin.putback('\n');
+            std::cout << "\u001b[2K\r";
+        }
 
         if (not std::cin.peek() == '\n' and not(std::cin.good())) {
             std::cin.clear();
@@ -70,7 +84,7 @@ char colorInput() {
     return userInput;
 }
 
-void maskFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, int delta = DELTA_DEFAULT) {
+void maskFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, int delta = DELTA) {
     cv::Mat bgr[3];
     cv::split(inFrame, bgr);
 
@@ -98,7 +112,7 @@ void maskFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, int de
 void processFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, cv::Size kSize = cv::Size(10, 10)) {
     // normal color for the codes -- handled by default by openCV
     if (targetClr == 'w')
-        return cv::cvtColor(outFrame, outFrame, cv::COLOR_BGR2GRAY);
+        return cv::cvtColor(inFrame, outFrame, cv::COLOR_BGR2GRAY);
 
     // run a bilateralFilter to blur the original image - helps reducing noise for future masking
     cv::bilateralFilter(inFrame, outFrame, 5, 75, 90);  //! needs revision
@@ -136,11 +150,13 @@ void detectMarkers(cv::Mat &original, cv::Mat &masked, cv::Ptr<cv::aruco::Dictio
 
 // ####################################################################################################################
 
-std::string arucoRecLoop(cv::VideoCapture &vidCap, std::string dict, float mLen) {
+void arucoRecLoop(cv::VideoCapture &vidCap, std::string dict, float mLen) {
     cv::Mat frame, maskedFrame;
 
-    char targetColorCh = colorInput();
-    auto arucoDict = cv::aruco::getPredefinedDictionary(supportedArucoTypes.at(dict));
+    char targetColorCh = colorInput(targetColorCh);
+    int dictIndex = supportedArucoTypes.at(dict);
+    auto arucoDict = cv::aruco::getPredefinedDictionary(dictIndex);
+    std::cout << "Grabbing frames ... " << std::endl;
 
     while (true) {
         vidCap.read(frame);
@@ -160,19 +176,18 @@ std::string arucoRecLoop(cv::VideoCapture &vidCap, std::string dict, float mLen)
         int key = cv::waitKey(1) & 0xff;
         switch (key) {
             case 'd':
-                arucoDict = cv::aruco::getPredefinedDictionary(dictInput());
+                dictIndex = dictInput(dictIndex);
+                arucoDict = cv::aruco::getPredefinedDictionary(dictIndex);
                 break;
 
             case 'c':
-                targetColorCh = colorInput();
+                targetColorCh = colorInput(targetColorCh);
                 break;
 
             case 'q':
-                return "";
+                return;
         }
     }
-
-    return "";
 }
 
 int main(int argc, char **argv) {
