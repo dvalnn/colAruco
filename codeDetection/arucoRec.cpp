@@ -44,8 +44,9 @@ int dictInput(int currDict) {
         std::cin >> std::setw(10) >> userInput;
 
         if (std::cin.eof()) {
-            std::cout << "\u001b[2K";
-            return currDict;
+            std::cin.clear();
+            std::cin.putback('\n');
+            std::cout << "\u001b[2K\r";
         }
 
         if ((userInput == "-h" or userInput == "-help") and std::cin.peek() == '\n' and std::cin.good()) {
@@ -69,8 +70,9 @@ char colorInput(char currClr) {
         std::cin >> userInput;
 
         if (std::cin.eof()) {
-            std::cout << "\u001b[2K";
-            return currClr ? currClr : 'w';
+            std::cin.clear();
+            std::cin.putback('\n');
+            std::cout << "\u001b[2K\r";
         }
 
         if (not std::cin.peek() == '\n' and not(std::cin.good())) {
@@ -153,10 +155,10 @@ void arucoRecLoop(cv::VideoCapture &vidCap, std::string dict, float mLen) {
     char targetColorCh = colorInput(targetColorCh);
     int dictIndex = supportedArucoTypes.at(dict);
     auto arucoDict = cv::aruco::getPredefinedDictionary(dictIndex);
+    std::cout << "Grabbing frames ... " << std::endl;
 
     while (true) {
         vidCap.read(frame);
-        std::cout << "\rGrabbing frames ... " << std::flush;
 
         if (frame.empty()) {
             std::cout << "[FATAL] blank frame grabbed.\n";
@@ -173,18 +175,15 @@ void arucoRecLoop(cv::VideoCapture &vidCap, std::string dict, float mLen) {
         int key = cv::waitKey(1) & 0xff;
         switch (key) {
             case 'd':
-                std::cout << "\n";
                 dictIndex = dictInput(dictIndex);
                 arucoDict = cv::aruco::getPredefinedDictionary(dictIndex);
                 break;
 
             case 'c':
-                std::cout << "\n";
                 targetColorCh = colorInput(targetColorCh);
                 break;
 
             case 'q':
-                std::cout << "\n";
                 return;
         }
     }
