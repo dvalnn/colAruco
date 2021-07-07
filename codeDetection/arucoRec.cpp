@@ -136,7 +136,7 @@ void detectMarkers(cv::Mat &original, cv::Mat &masked, cv::Ptr<cv::aruco::Dictio
 
 // ####################################################################################################################
 
-std::string arucoRecLoop(cv::VideoCapture &vidCap, std::string dict, float mLen) {
+void arucoRecLoop(cv::VideoCapture &vidCap, std::string dict, float mLen) {
     cv::Mat frame, maskedFrame;
 
     char targetColorCh = colorInput();
@@ -168,11 +168,9 @@ std::string arucoRecLoop(cv::VideoCapture &vidCap, std::string dict, float mLen)
                 break;
 
             case 'q':
-                return "";
+                return;
         }
     }
-
-    return "";
 }
 
 int main(int argc, char **argv) {
