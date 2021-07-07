@@ -46,7 +46,7 @@ int dictInput() {
         if ((userInput == "-h" or userInput == "-help") and std::cin.peek() == '\n' and std::cin.good()) {
             std::cout << "Supported dict values (usage: -d=<value>)\n";
             for (auto pair : supportedArucoTypes)
-                std::cout << " -- \"" << pair.first << "\"" << std::endl;
+                std::cout << " -- \"" << pair.first << "\"n";
         } else {
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
