@@ -238,11 +238,11 @@ bool runCalibrationAndSave(Settings& s, Size imageSize, Mat& cameraMatrix, Mat& 
 
 int main(int argc, char* argv[]) {
     const String keys =
-        "{help h usage ? |           | print this message            }"
-        "{@settings      |default.xml| input setting file            }"
-        "{d              |           | actual distance between top-left and top-right corners of "
+        "{help h usage ? |              | print this message            }"
+        "{@settings      |../default.xml| input setting file            }"
+        "{d              |              | actual distance between top-left and top-right corners of "
         "the calibration grid }"
-        "{winSize        | 11        | Half of search window for cornerSubPix }";
+        "{winSize        | 11           | Half of search window for cornerSubPix }";
     CommandLineParser parser(argc, argv, keys);
     parser.about(
         "This is a camera calibration sample.\n"
