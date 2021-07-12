@@ -7,4 +7,4 @@ find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
 add_executable(cameraCalibration cameraCalibration.cpp)
-target_link_libraries(arucoRec ${OpenCV_LIBS})
+target_link_libraries(cameraCalibration ${OpenCV_LIBS})
