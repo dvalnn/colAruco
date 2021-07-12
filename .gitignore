@@ -1,5 +1,5 @@
 /cameraCalibration/calibrationImages
-/codeDetection/build
+*/build
 *.png
 *.npz
 .vscode
