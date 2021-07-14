@@ -1,14 +1,9 @@
-class CameraSettings {
-   public:
-};
+#include <opencv2/aruco.hpp>
 
-class ArucoSettings {
-   public:
-};
 class Settings {
    public:
-    bool cameraOk = true;
-    bool arucoOK = true;
-
-   Settings(){}
+    bool OK = true;
+    cv::Mat cameraMatrix;
+    cv::Mat distortionCoeffs;
+    Settings(std::string filepath);
 };
