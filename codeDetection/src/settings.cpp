@@ -1,12 +1,11 @@
-#include <string>
 #include <iostream>
 
 #include "../include/settings.hpp"
 
 using namespace std;
 
-Settings::Settings(string filepath) {
-    if (filepath.find(".yml") == string::npos or filepath.find(".xml") == string::npos) {
+CameraSettings::CameraSettings(string filepath) {
+    if (filepath.find(".yml") == string::npos and filepath.find(".xml") == string::npos) {
         OK = false;
         cout << "[ERROR] Camera settings file must be supported by opencv (.yml | .xml | .json)" << endl;
         return;
@@ -21,4 +20,8 @@ Settings::Settings(string filepath) {
         OK = false;
         cout << "[ERROR] Invalid data (" << filepath << ")" << endl;
     }
+}
+
+ArucoSettings::ArucoSettings() {
+    arucoParams = cv::aruco::DetectorParameters::create();
 }

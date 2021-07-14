@@ -8,6 +8,8 @@
 #include <opencv2/aruco.hpp>
 #include <opencv2/opencv.hpp>
 
+#include "../include/settings.hpp"
+
 // ####################################################################################################################
 
 #define DELTA 12
@@ -191,6 +193,16 @@ void arucoRecLoop(cv::VideoCapture &vidCap, std::string dict, float mLen) {
 }
 
 int main(int argc, char **argv) {
+    // Settings invalidSettings("");
+
+    // Settings validSettings("../../cameraCalibration/sample_outCamera.yml");
+
+    // std::cout << validSettings.OK << std::endl
+    //           << validSettings.cameraMatrix << std::endl
+    //           << validSettings.distortionCoeffs << std::endl;
+
+    // return 0;
+
     const std::string keys =
         "{help h    |        | print this message                                               }"
         "{dict d    | 6_1000 | dictionary used for code detection                               }"
