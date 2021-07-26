@@ -8,7 +8,8 @@
 #include <opencv2/aruco.hpp>
 #include <opencv2/opencv.hpp>
 
-#include "../include/settings.hpp"
+#include "../include/cameraSettings.hpp"
+#include "../include/arucoSettings.hpp"
 
 // ####################################################################################################################
 
