@@ -2,19 +2,12 @@
 #include <string>
 
 #include <opencv2/aruco.hpp>
-class CameraSettings {
-   public:
-    bool OK = true;
-    cv::Mat cameraMatrix;
-    cv::Mat distortionCoeffs;
-
-    CameraSettings();
-    CameraSettings(std::string filepath);
-};
 
 class ArucoSettings {
-   public:
+   private:
     bool OK = true;
+
+   public:
     float squareSize;
 
     cv::Ptr<cv::aruco::Dictionary> arucoDict;
