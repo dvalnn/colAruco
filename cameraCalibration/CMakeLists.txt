@@ -6,5 +6,5 @@ project(cameraCalibration)
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
-add_executable(cameraCalibration cameraCalibration.cpp)
+add_executable(cameraCalibration src/cameraCalibration.cpp)
 target_link_libraries(cameraCalibration ${OpenCV_LIBS})
