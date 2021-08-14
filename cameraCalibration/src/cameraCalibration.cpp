@@ -88,7 +88,13 @@ void cameracalibration(vector<cv::Mat> calibrationImages,
 
 void saveCameraCalibration(string filename, cv::Mat cameraMatrix, cv::Mat distanceCoefficients) {
     cv::FileStorage fs(filename, cv::FileStorage::WRITE);
-    fs << cameraMatrix << distanceCoefficients;
+    if (!fs.isOpened()) {
+        cout << "Error saving to file " << filename << endl;
+        return;
+    }
+
+    fs << "cameraMatrix " << cameraMatrix
+       << "distanceCoefficients" << distanceCoefficients;
 }
 
 int main(int argc, char** argv) {
@@ -106,7 +112,7 @@ int main(int argc, char** argv) {
         return 0;
 
     int framesPerSecond = 30;
-
+    int nImages = 0;
     cv::namedWindow("Webcam", cv::WINDOW_AUTOSIZE);
 
     while (true) {
@@ -132,12 +138,14 @@ int main(int argc, char** argv) {
         switch (character) {
             case 13:  // ENTER
                 //starting calibration
-                if (savedImages.size() >= 15) {
+                if (savedImages.size() >= 30) {
                     cameracalibration(savedImages, chessboardSize, calibrationSquareSize, cameraMatrix, distanceCoefficients);
                     string filename = "../resources/calib_results.json";
+                    cout << "Calibration successful\nSaving results to " << filename << endl;
                     saveCameraCalibration(filename, cameraMatrix, distanceCoefficients);
+                    cv::waitKey(0);
+                    return 0;
                 }
-                break;
 
             case 27:  // ESC
                 //exiting program
@@ -148,6 +156,7 @@ int main(int argc, char** argv) {
                 cv::Mat temp;
                 frame.copyTo(temp);
                 savedImages.push_back(temp);
+                cout << "image saved (" << ++nImages << "/15)\n";
                 break;
         }
     }
