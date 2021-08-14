@@ -146,7 +146,7 @@ void detectMarkers(cv::Mat &original, cv::Mat &masked, cv::Ptr<cv::aruco::Dictio
         for (int i = 0; i < rvecs.size(); i++) {
             auto rvec = rvecs[i];
             auto tvec = tvecs[i];
-            cv::aruco::drawAxis(original, CAMERA_MATRIX, DIST_COEFFS, rvec, tvec, 0.01);
+            cv::aruco::drawAxis(original, CAMERA_MATRIX, DIST_COEFFS, rvec, tvec, 0.005);
         }
     }
 }

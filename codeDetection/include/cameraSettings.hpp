@@ -14,5 +14,5 @@ class CameraSettings {
     cv::Mat getDistCoeffs() const;
 
     CameraSettings(std::string filepath);
-    void createFile(string filepath, cv::Mat camMatrix, cv::Mat distCoeffs);
+    void createFile(std::string filepath, cv::Mat camMatrix, cv::Mat distCoeffs);
 };
