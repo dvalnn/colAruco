@@ -64,8 +64,8 @@ void getChessboardCorners(vector<cv::Mat> images, vector<vector<cv::Point2f>>& a
 void cameracalibration(vector<cv::Mat> calibrationImages,
                        cv::Size boardSize,
                        float squareEdgeLength,
-                       cv::Mat& distanceCoefficients,
-                       cv::Mat& cameraMatrix) {
+                       cv::Mat& cameraMatrix,
+                       cv::Mat& distanceCoefficients) {
     vector<vector<cv::Point2f>> chessboardImageSpacePoints;
     getChessboardCorners(calibrationImages, chessboardImageSpacePoints, false);
 
@@ -84,6 +84,11 @@ void cameracalibration(vector<cv::Mat> calibrationImages,
                         distanceCoefficients,
                         rVectors,
                         tVectors);
+}
+
+void saveCameraCalibration(string filename, cv::Mat cameraMatrix, cv::Mat distanceCoefficients) {
+    cv::FileStorage fs(filename, cv::FileStorage::WRITE);
+    fs << cameraMatrix << distanceCoefficients;
 }
 
 int main(int argc, char** argv) {
@@ -126,15 +131,23 @@ int main(int argc, char** argv) {
 
         switch (character) {
             case 13:  // ENTER
-            //starting calibration
+                //starting calibration
+                if (savedImages.size() >= 15) {
+                    cameracalibration(savedImages, chessboardSize, calibrationSquareSize, cameraMatrix, distanceCoefficients);
+                    string filename = "../resources/calib_results.json";
+                    saveCameraCalibration(filename, cameraMatrix, distanceCoefficients);
+                }
                 break;
 
             case 27:  // ESC
-            //exiting program
-                break;
+                //exiting program
+                return 0;
 
             case 32:  // SPACE
-            //saving image
+                //saving image
+                cv::Mat temp;
+                frame.copyTo(temp);
+                savedImages.push_back(temp);
                 break;
         }
     }
