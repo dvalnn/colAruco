@@ -42,8 +42,13 @@ CameraSettings::CameraSettings(string filepath) {
     fs["Camera_Matrix"] >> cameraMatrix;
     fs["Distortion_Coefficients"] >> distortionCoeffs;
 
+    cout << "Camera_Matrix" << cameraMatrix << endl;
+    cout << "Distortion_Coefficients" << distortionCoeffs << endl;
+
     if (cameraMatrix.empty() or distortionCoeffs.empty()) {
         cout << "[ERROR] Invalid data (" << filepath << ")" << endl;
+        OK = false;
+        return;
     }
 
     OK = true;
