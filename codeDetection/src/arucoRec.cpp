@@ -15,9 +15,6 @@
 
 #define DELTA 12
 
-const cv::Size chessboardSize = cv::Size(7, 12);
-const float calibrationSquareSize = 0.020f;  //meters
-
 auto ARUCO_PARAMS = cv::aruco::DetectorParameters::create();
 
 const std::map<std::string, int> supportedArucoTypes{
@@ -192,10 +189,13 @@ void arucoRecLoop(CameraSettings cs, cv::VideoCapture &vidCap, std::string dict,
 
 int main(int argc, char **argv) {
     const std::string keys =
-        "{help h    |        | print this message                                               }"
-        "{dict d    | 6_1000 | dictionary used for code detection                               }"
-        "{lenght l  |        | aruco marker square side lenght (in meters)                      }"
-        "{camera c  |        | manually set webcam path in case it isn't being found by default }";
+        "{help h                          |      | print this message                                                 }"
+        "{dict d                          | 4_50 | dictionary used for code detection                                 }"
+        "{camera c                        |      | manually set webcam path in case it isn't being found by default   }"
+        "{markerSquareSize ms             |      | aruco marker side lenght (in meters)                               }"
+        "{calibrationSquareSize cs        | 0.02 | side lenght (in meters) of the chessboard squares (for calibration)}"
+        "{calibrationVerticalCorners vc   |  7   | number of inner corners - vertical (chessboard for calibration)    }"
+        "{calibrationHorizontalCorners hc |  12  | number of inner corners - horizontal (chessboard for calibration)  }";
 
     cv::CommandLineParser parser(argc, argv, keys);
     parser.about("opencv video stream aruco detection");
@@ -205,7 +205,7 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    if (not parser.has("lenght")) {
+    if (not parser.has("markerSquareSize")) {
         parser.printMessage();
         return 0;
     }
@@ -216,6 +216,9 @@ int main(int argc, char **argv) {
     }
 
     CameraSettings cs("../resources/calib_results.json");
+
+    const cv::Size chessboardSize = cv::Size(parser.get<int>("vc"), parser.get<int>("hc"));
+    const float calibrationSquareSize = parser.get<float>("calibrationSquareSize");
 
     if (not cs.OK) {
         cs.runCalibrationAndSave(chessboardSize, calibrationSquareSize);
@@ -240,7 +243,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    arucoRecLoop(cs, vidCap, parser.get<std::string>("dict"), std::abs(parser.get<float>("lenght")));
+    arucoRecLoop(cs, vidCap, parser.get<std::string>("dict"), std::abs(parser.get<float>("markerSquareSize")));
 
     return 0;
 }
