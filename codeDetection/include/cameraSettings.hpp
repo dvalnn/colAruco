@@ -10,12 +10,13 @@ class CameraSettings {
     cv::Mat distortionCoeffs;
 
     CameraSettings(string filepath);
-    bool runCalibrationAndSave();
+    bool runCalibrationAndSave(const cv::Size chessboardSize, const float calibrationSquareSize);
 
    private:
     bool saveCalibrationResults(string filepath, cv::Mat camMatrix, cv::Mat distCoeffs);
     void createKnownBoardPositions(cv::Size boardSize, float squareEdgelength, vector<cv::Point3f>& corners);
-    void getChessboardCorners(vector<cv::Mat> images, vector<vector<cv::Point2f>>& allFoundCorners, bool showResults);
+    void getChessboardCorners(vector<cv::Mat> images, vector<vector<cv::Point2f>>& allFoundCorners,
+                              cv::Size chessboardSize, bool showResults);
     void cameraCalibration(vector<cv::Mat> calibrationImages, cv::Size boardSize, float squareEdgeLength,
                            cv::Mat& cameraMatrix, cv::Mat& distanceCoefficients);
 };

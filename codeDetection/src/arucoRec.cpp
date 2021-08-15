@@ -15,6 +15,9 @@
 
 #define DELTA 12
 
+const cv::Size chessboardSize = cv::Size(7, 12);
+const float calibrationSquareSize = 0.020f;  //meters
+
 auto ARUCO_PARAMS = cv::aruco::DetectorParameters::create();
 
 const std::map<std::string, int> supportedArucoTypes{
@@ -140,7 +143,7 @@ void detectMarkers(CameraSettings cs, cv::Mat &original, cv::Mat &masked, cv::Pt
         for (int i = 0; i < rvecs.size(); i++) {
             auto rvec = rvecs[i];
             auto tvec = tvecs[i];
-            cv::aruco::drawAxis(original, cs.cameraMatrix, cs.distortionCoeffs, rvec, tvec, 0.01);
+            cv::aruco::drawAxis(original, cs.cameraMatrix, cs.distortionCoeffs, rvec, tvec, mLen / 3);
         }
     }
 }
@@ -191,7 +194,7 @@ int main(int argc, char **argv) {
     const std::string keys =
         "{help h    |        | print this message                                               }"
         "{dict d    | 6_1000 | dictionary used for code detection                               }"
-        "{lenght l  |  0.010 | square's side lenght for each code (in meters)                   }"
+        "{lenght l  |        | aruco marker square side lenght (in meters)                      }"
         "{camera c  |        | manually set webcam path in case it isn't being found by default }";
 
     cv::CommandLineParser parser(argc, argv, keys);
@@ -202,15 +205,22 @@ int main(int argc, char **argv) {
         return 0;
     }
 
+    if (not parser.has("lenght")) {
+        parser.printMessage();
+        return 0;
+    }
+
     if (!supportedArucoTypes.contains(parser.get<std::string>("dict"))) {
         std::cout << "[FATAL] aruco tag of type {dict" << parser.get<std::string>("dict") << "} is not supported\n";
         return -1;
     }
 
-    CameraSettings cs("../../cameraCalibration/resources/calib_results.json");
-    
-    if (not cs.OK)
+    CameraSettings cs("../resources/calib_results.json");
+
+    if (not cs.OK) {
+        cs.runCalibrationAndSave(chessboardSize, calibrationSquareSize);
         return 0;
+    }
 
     cv::VideoCapture vidCap;
 

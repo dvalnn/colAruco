@@ -8,10 +8,6 @@
 
 #include "../include/cameraSettings.hpp"
 
-const cv::Size chessboardSize = cv::Size(7, 12);
-const float calibrationSquareSize = 0.020f;  //meters
-const float arucoMarkerSize = 0.0905f;       //meters
-
 using namespace std;
 
 #define INVALID_PATH_ERROR_MSG "[ERROR] Camera settings file must be supported by opencv (.yml | .xml | .json)"
@@ -87,7 +83,7 @@ void CameraSettings::createKnownBoardPositions(cv::Size boardSize, float squareE
  * @param showResults 
  */
 void CameraSettings::getChessboardCorners(vector<cv::Mat> images, vector<vector<cv::Point2f>>& allFoundCorners,
-                                          bool showResults) {
+                                          cv::Size chessboardSize, bool showResults) {
     for (vector<cv::Mat>::iterator iter = images.begin(); iter != images.end(); iter++) {
         vector<cv::Point2f> pointBuffer;
         auto detectionFlags = cv::CALIB_CB_ADAPTIVE_THRESH | cv::CALIB_CB_NORMALIZE_IMAGE;
@@ -107,7 +103,7 @@ void CameraSettings::getChessboardCorners(vector<cv::Mat> images, vector<vector<
 void CameraSettings::cameraCalibration(vector<cv::Mat> calibrationImages, cv::Size boardSize, float squareEdgeLength,
                                        cv::Mat& cameraMatrix, cv::Mat& distanceCoefficients) {
     vector<vector<cv::Point2f>> chessboardImageSpacePoints;
-    getChessboardCorners(calibrationImages, chessboardImageSpacePoints, false);
+    getChessboardCorners(calibrationImages, chessboardImageSpacePoints, boardSize, false);
 
     vector<vector<cv::Point3f>> worldSpaceCornerPoints(1);
 
@@ -121,11 +117,11 @@ void CameraSettings::cameraCalibration(vector<cv::Mat> calibrationImages, cv::Si
                         cameraMatrix, distanceCoefficients, rVectors, tVectors);
 }
 
-bool CameraSettings::runCalibrationAndSave() {
+bool CameraSettings::runCalibrationAndSave(const cv::Size chessboardSize, const float calibrationSquareSize) {
     cv::Mat frame;
 
     cv::Mat cameraMatrix = cv::Mat::eye(3, 3, CV_64F);
-    cv::Mat distanceCoefficients;
+    cv::Mat distortionCoefficients;
 
     vector<cv::Mat> savedImages;
     vector<vector<cv::Point2f>> markerCorners, rejectedCandidates;
@@ -137,8 +133,8 @@ bool CameraSettings::runCalibrationAndSave() {
 
     int framesPerSecond = 30;
     int nImages = 0;
-    
-    cv::namedWindow("Webcam", cv::WINDOW_AUTOSIZE);
+
+    cv::namedWindow("Webcam - calibration mode", cv::WINDOW_AUTOSIZE);
 
     while (true) {
         if (!vid.read(frame))
@@ -153,34 +149,35 @@ bool CameraSettings::runCalibrationAndSave() {
         cv::drawChessboardCorners(drawToFrame, chessboardSize, foundPoints, found);
 
         if (found)
-            cv::imshow("Webcam", drawToFrame);
+            cv::imshow("Webcam - calibration mode", drawToFrame);
         else
-            cv::imshow("Webcam", frame);
+            cv::imshow("Webcam - calibration mode", frame);
 
         char character = cv::waitKey(1000 / framesPerSecond);
 
         switch (character) {
-            case 13:  // ENTER
-                //starting calibration
+            case 13:  // ENTER - starting calibration
                 if (savedImages.size() >= 30) {
                     string filename = "../resources/calib_results.json";
 
-                    cameraCalibration(savedImages, chessboardSize, calibrationSquareSize, cameraMatrix, distanceCoefficients);
+                    cameraCalibration(savedImages, chessboardSize, calibrationSquareSize, cameraMatrix, distortionCoefficients);
                     cout << "Calibration successful\nSaving results to " << filename << endl;
 
-                    saveCalibrationResults(filename, cameraMatrix, distanceCoefficients);
+                    this->cameraMatrix = cameraMatrix;
+                    this->distortionCoeffs = distortionCoefficients;
+
+                    if (!saveCalibrationResults(filename, cameraMatrix, distortionCoefficients)) {
+                    }
                     cout << "Press any key to end calibration" << endl;
 
                     cv::waitKey(0);
                     return true;
                 }
 
-            case 27:  // ESC
-                //exiting program
+            case 27:  // ESC - exiting calibration
                 return 0;
 
-            case 32:  // SPACE
-                //saving image
+            case 32:  // SPACE - saving image
                 cv::Mat temp;
                 frame.copyTo(temp);
                 savedImages.push_back(temp);
