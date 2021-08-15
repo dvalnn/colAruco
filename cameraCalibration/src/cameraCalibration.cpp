@@ -93,8 +93,8 @@ void saveCameraCalibration(string filename, cv::Mat cameraMatrix, cv::Mat distan
         return;
     }
 
-    fs << "cameraMatrix " << cameraMatrix
-       << "distanceCoefficients" << distanceCoefficients;
+    fs << "Camera_Matrix " << cameraMatrix
+       << "Distortion_Coefficients" << distanceCoefficients;
 }
 
 int main(int argc, char** argv) {

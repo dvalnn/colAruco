@@ -15,16 +15,6 @@
 
 #define DELTA 12
 
-float data1[] = {8.2219443112736826e+02, 0.0, 3.2077946944596493e+02,
-                 0.0, 8.2458683928152254e+02, 2.3636903638534159e+02, 0.0,
-                 0.0, 1.0};
-const cv::Mat CAMERA_MATRIX = cv::Mat(3, 3, CV_32F, data1);
-
-float data2[] = {-5.3524694981976983e-02, 2.4072220924976619e+00,
-                 1.2482674411464863e-03, -3.2453754716338604e-03,
-                 -1.3196799405898721e+01};
-const cv::Mat DIST_COEFFS = cv::Mat(1, 5, CV_32F, data2);
-
 auto ARUCO_PARAMS = cv::aruco::DetectorParameters::create();
 
 const std::map<std::string, int> supportedArucoTypes{
@@ -136,28 +126,28 @@ void processFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, cv:
     cv::erode(outFrame, outFrame, erKernel);
 }
 
-void detectMarkers(cv::Mat &original, cv::Mat &masked, cv::Ptr<cv::aruco::Dictionary> dict, float mLen) {
+void detectMarkers(CameraSettings cs, cv::Mat &original, cv::Mat &masked, cv::Ptr<cv::aruco::Dictionary> dict, float mLen) {
     std::vector<int> ids;
     std::vector<cv::Vec3d> rvecs, tvecs;
     std::vector<std::vector<cv::Point2f> > corners, rejected;
 
-    cv::aruco::detectMarkers(masked, dict, corners, ids, ARUCO_PARAMS, rejected, CAMERA_MATRIX, DIST_COEFFS);
+    cv::aruco::detectMarkers(masked, dict, corners, ids, ARUCO_PARAMS, rejected, cs.cameraMatrix, cs.distortionCoeffs);
 
     if (not corners.empty()) {
         cv::aruco::drawDetectedMarkers(original, corners, ids);
-        cv::aruco::estimatePoseSingleMarkers(corners, mLen, CAMERA_MATRIX, DIST_COEFFS, rvecs, tvecs);
+        cv::aruco::estimatePoseSingleMarkers(corners, mLen, cs.cameraMatrix, cs.distortionCoeffs, rvecs, tvecs);
 
         for (int i = 0; i < rvecs.size(); i++) {
             auto rvec = rvecs[i];
             auto tvec = tvecs[i];
-            cv::aruco::drawAxis(original, CAMERA_MATRIX, DIST_COEFFS, rvec, tvec, 0.01);
+            cv::aruco::drawAxis(original, cs.cameraMatrix, cs.distortionCoeffs, rvec, tvec, 0.01);
         }
     }
 }
 
 // ####################################################################################################################
 
-void arucoRecLoop(cv::VideoCapture &vidCap, std::string dict, float mLen) {
+void arucoRecLoop(CameraSettings cs, cv::VideoCapture &vidCap, std::string dict, float mLen) {
     cv::Mat frame, maskedFrame;
 
     char targetColorCh = colorInput(targetColorCh);
@@ -174,7 +164,7 @@ void arucoRecLoop(cv::VideoCapture &vidCap, std::string dict, float mLen) {
         }
 
         processFrame(frame, maskedFrame, targetColorCh);
-        detectMarkers(frame, maskedFrame, arucoDict, mLen);
+        detectMarkers(cs, frame, maskedFrame, arucoDict, mLen);
 
         cv::imshow("Live", frame);
         cv::imshow("Color Mask", maskedFrame);
@@ -198,16 +188,6 @@ void arucoRecLoop(cv::VideoCapture &vidCap, std::string dict, float mLen) {
 }
 
 int main(int argc, char **argv) {
-    // Settings invalidSettings("");
-
-    // Settings validSettings("../../cameraCalibration/sample_outCamera.yml");
-
-    // std::cout << validSettings.OK << std::endl
-    //           << validSettings.cameraMatrix << std::endl
-    //           << validSettings.distortionCoeffs << std::endl;
-
-    // return 0;
-
     const std::string keys =
         "{help h    |        | print this message                                               }"
         "{dict d    | 6_1000 | dictionary used for code detection                               }"
@@ -227,6 +207,11 @@ int main(int argc, char **argv) {
         return -1;
     }
 
+    CameraSettings cs("../../cameraCalibration/resources/calib_results.json");
+    
+    if (not cs.OK)
+        return 0;
+
     cv::VideoCapture vidCap;
 
     if (parser.has("camera")) {
@@ -245,7 +230,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    arucoRecLoop(vidCap, parser.get<std::string>("dict"), std::abs(parser.get<float>("lenght")));
+    arucoRecLoop(cs, vidCap, parser.get<std::string>("dict"), std::abs(parser.get<float>("lenght")));
 
     return 0;
 }
