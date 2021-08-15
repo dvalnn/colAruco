@@ -238,6 +238,10 @@ int main(int argc, char **argv) {
             if (vidCap.isOpened())
                 break;
 
+            cout << "\u001b[1A"   //move cursor up one line
+                 << "\r"          //move cursor to the beginning of the line
+                 << "\u001b[2K";  //clear line
+
             if (i == 10)
                 return 0;
         }
