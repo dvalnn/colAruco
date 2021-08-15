@@ -8,14 +8,21 @@
 #include <opencv2/aruco.hpp>
 #include <opencv2/opencv.hpp>
 
+#include "../include/cameraSettings.hpp"
+#include "../include/arucoSettings.hpp"
+
 // ####################################################################################################################
 
 #define DELTA 12
 
-float data1[] = {752.461885, 0, 363.097359, 0, 513.308335, 242.851570, 0, 0, 1};
+float data1[] = {8.2219443112736826e+02, 0.0, 3.2077946944596493e+02,
+                 0.0, 8.2458683928152254e+02, 2.3636903638534159e+02, 0.0,
+                 0.0, 1.0};
 const cv::Mat CAMERA_MATRIX = cv::Mat(3, 3, CV_32F, data1);
 
-float data2[] = {0.050106, 0.045766, -0.019956, 0.022466, 0.000000};
+float data2[] = {-5.3524694981976983e-02, 2.4072220924976619e+00,
+                 1.2482674411464863e-03, -3.2453754716338604e-03,
+                 -1.3196799405898721e+01};
 const cv::Mat DIST_COEFFS = cv::Mat(1, 5, CV_32F, data2);
 
 auto ARUCO_PARAMS = cv::aruco::DetectorParameters::create();
@@ -191,6 +198,16 @@ void arucoRecLoop(cv::VideoCapture &vidCap, std::string dict, float mLen) {
 }
 
 int main(int argc, char **argv) {
+    // Settings invalidSettings("");
+
+    // Settings validSettings("../../cameraCalibration/sample_outCamera.yml");
+
+    // std::cout << validSettings.OK << std::endl
+    //           << validSettings.cameraMatrix << std::endl
+    //           << validSettings.distortionCoeffs << std::endl;
+
+    // return 0;
+
     const std::string keys =
         "{help h    |        | print this message                                               }"
         "{dict d    | 6_1000 | dictionary used for code detection                               }"

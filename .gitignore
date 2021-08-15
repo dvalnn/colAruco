@@ -1,5 +1,7 @@
 /cameraCalibration/calibrationImages
-/codeDetection/build
+*/build
+*/resources/markers
+*/resources/calib_results.json
 *.png
 *.npz
 .vscode
