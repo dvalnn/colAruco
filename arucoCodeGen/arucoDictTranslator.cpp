@@ -91,3 +91,22 @@ void byteTranslator(uint8_t codedBytes[], int size, int translatedBytes[])
         translatedBytes[i / size] += bits[i] << ((size - 1) - (i % size));
     delete[] bits;
 }
+
+
+/*
+void createArucoMarkers() {
+    cv::Mat outputMarker;
+
+    cv::Ptr<cv::aruco::Dictionary> markerDictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_50);
+
+    for (int i = 0; i < 50; i++) {
+        cv::aruco::drawMarker(markerDictionary, i, 500, outputMarker);
+
+        ostringstream fileName;
+        string imageName = "4x4Marker_";
+        string directoryName = "../resources/";
+        fileName << directoryName << imageName << i << ".jpg";
+        imwrite(fileName.str(), outputMarker);
+    }
+}
+*/
