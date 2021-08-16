@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
+import cv2
 import serial
-import subprocess
 import argparse
 from time import time
 
@@ -20,12 +20,21 @@ def arduino_read():
     return [str(value) for value in serial_out]
 
 
-def fetch_aruco(id: str, size: str) -> str:
+def fetch_aruco(id, dictionary) -> str:
 
-    completed_process = subprocess.run(
-        ["../arucoCodeGen/arucoDictTranslator", id, size], capture_output=True, text=True
-    )
-    return completed_process.stdout.strip("\n").strip()
+    marker_dictionary = cv2.aruco.Dictionary_get(dictionary)
+    marker = cv2.aruco.drawMarker(marker_dictionary, 0, 6)
+
+    marker_bits = [0 for _ in range(6)]
+
+    for i in range(len(marker)):
+        for j in range(len(marker[i])):
+            if marker[i][j]:
+                marker_bits[i] += 1 << (len(marker[i]) - j - 1)
+
+    code_raw = " ".join(str(marker_bits[i]) for i in range(len(marker_bits)))
+
+    return f"code {len(marker_bits)} {code_raw}"
 
 
 def man():
@@ -96,7 +105,7 @@ def input_parser(usr_input: list) -> tuple:
             if id in range(0, 1000) and dict_type in ARUCO_DICT.keys():
                 error = False
                 input_flag = "code"
-                formated_input += fetch_aruco(str(id), ARUCO_DICT[dict_type])
+                formated_input += fetch_aruco(id, ARUCO_DICT[dict_type])
             else:
                 print("[ERROR] Invalid code input")
 
@@ -199,11 +208,11 @@ if __name__ == "__main__":
     }
 
     ARUCO_DICT = {
-        "dict4": "4",
-        "dict5": "5",
-        "dict6": "6",
+        "dict4": cv2.aruco.DICT_4X4_1000,
+        "dict5": cv2.aruco.DICT_5X5_1000,
+        "dict6": cv2.aruco.DICT_6X6_1000,
         # "dict7": "7",
-        "dict_or": "0",
+        "dict_or": cv2.aruco.DICT_ARUCO_ORIGINAL,
     }
 
     main(arduino)
