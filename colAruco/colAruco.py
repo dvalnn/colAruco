@@ -32,9 +32,9 @@ def fetch_aruco(id, dictionary) -> str:
             if marker[i][j]:
                 marker_bits[i] += 1 << (len(marker[i]) - j - 1)
 
-    code_raw = " ".join(str(marker_bits[i]) for i in range(len(marker_bits)))
+    bytes_string = " ".join(str(marker_bits[i]) for i in range(len(marker_bits)))
 
-    return f"code {len(marker_bits)} {code_raw}"
+    return f"code {len(marker_bits)} {bytes_string}"
 
 
 def man():
