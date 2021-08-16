@@ -15,8 +15,6 @@ using namespace std;
 
 void byteTranslator(uint8_t *codedBytes, int size, int *translatedBytes);
 void addZeroBorder(int translatedBytes[], int size, int withBorder[]);
-int fillWith1(int size);
-int addBorder(int translatedBytes[], int size, int withBorder[]);
 
 int main(int argc, char *argv[])
 {
