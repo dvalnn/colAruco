@@ -187,6 +187,7 @@ void arucoRecLoop(CameraSettings cs, cv::VideoCapture &vidCap, std::string dict,
     }
 }
 
+//* replacement for arucoCodeGen folder
 void createArucoBinary(int id) {
     cv::Mat outputMarker;
 
