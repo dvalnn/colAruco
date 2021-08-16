@@ -6,3 +6,4 @@
 *.npz
 .vscode
 *.tar.gz
+test.py
