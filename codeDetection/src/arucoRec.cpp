@@ -187,6 +187,31 @@ void arucoRecLoop(CameraSettings cs, cv::VideoCapture &vidCap, std::string dict,
     }
 }
 
+void createArucoBinary(int id) {
+    cv::Mat outputMarker;
+
+    auto markerDictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_50);
+    cv::aruco::drawMarker(markerDictionary, id, 6, outputMarker);
+
+    short *markerBits;
+    markerBits = new short[6];
+
+    for (int i = 0; i < outputMarker.rows; i++) {
+        for (int j = 0; j < outputMarker.cols; j++) {
+            if (outputMarker.at<uchar>(i, j))
+                markerBits[i] += (1 << outputMarker.cols - j - 1);
+        }
+    }
+
+    cout << "marker\n"
+         << outputMarker << endl
+         << "markerBits\n";
+
+    for (int i = 0; i < 6; i++) {
+        cout << markerBits[i] << endl;
+    }
+}
+
 int main(int argc, char **argv) {
     const std::string keys =
         "{help h                          |      | print this message                                                 }"
