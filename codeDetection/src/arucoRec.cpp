@@ -140,7 +140,7 @@ void detectMarkers(CameraSettings cs, cv::Mat &original, cv::Mat &masked, cv::Pt
         for (int i = 0; i < rvecs.size(); i++) {
             auto rvec = rvecs[i];
             auto tvec = tvecs[i];
-            cv::aruco::drawAxis(original, cs.cameraMatrix, cs.distortionCoeffs, rvec, tvec, 0.01);
+            cv::aruco::drawAxis(original, cs.cameraMatrix, cs.distortionCoeffs, rvec, tvec, mLen / 3);
         }
     }
 }
@@ -189,10 +189,13 @@ void arucoRecLoop(CameraSettings cs, cv::VideoCapture &vidCap, std::string dict,
 
 int main(int argc, char **argv) {
     const std::string keys =
-        "{help h    |        | print this message                                               }"
-        "{dict d    | 6_1000 | dictionary used for code detection                               }"
-        "{lenght l  |  0.010 | square's side lenght for each code (in meters)                   }"
-        "{camera c  |        | manually set webcam path in case it isn't being found by default }";
+        "{help h                          |      | print this message                                                 }"
+        "{dict d                          | 4_50 | dictionary used for code detection                                 }"
+        "{camera c                        |      | manually set webcam path in case it isn't being found by default   }"
+        "{markerSquareSize ms             |      | aruco marker side lenght (in meters)                               }"
+        "{calibrationSquareSize cs        | 0.02 | side lenght (in meters) of the chessboard squares (for calibration)}"
+        "{calibrationVerticalCorners vc   |  7   | number of inner corners - vertical (chessboard for calibration)    }"
+        "{calibrationHorizontalCorners hc |  12  | number of inner corners - horizontal (chessboard for calibration)  }";
 
     cv::CommandLineParser parser(argc, argv, keys);
     parser.about("opencv video stream aruco detection");
@@ -202,15 +205,25 @@ int main(int argc, char **argv) {
         return 0;
     }
 
+    if (not parser.has("markerSquareSize")) {
+        parser.printMessage();
+        return 0;
+    }
+
     if (!supportedArucoTypes.contains(parser.get<std::string>("dict"))) {
         std::cout << "[FATAL] aruco tag of type {dict" << parser.get<std::string>("dict") << "} is not supported\n";
         return -1;
     }
 
-    CameraSettings cs("../../cameraCalibration/resources/calib_results.json");
-    
-    if (not cs.OK)
+    CameraSettings cs("../resources/calib_results.json");
+
+    const cv::Size chessboardSize = cv::Size(parser.get<int>("vc"), parser.get<int>("hc"));
+    const float calibrationSquareSize = parser.get<float>("calibrationSquareSize");
+
+    if (not cs.OK) {
+        cs.runCalibrationAndSave(chessboardSize, calibrationSquareSize);
         return 0;
+    }
 
     cv::VideoCapture vidCap;
 
@@ -225,12 +238,16 @@ int main(int argc, char **argv) {
             if (vidCap.isOpened())
                 break;
 
+            cout << "\u001b[1A"   //move cursor up one line
+                 << "\r"          //move cursor to the beginning of the line
+                 << "\u001b[2K";  //clear line
+
             if (i == 10)
                 return 0;
         }
     }
 
-    arucoRecLoop(cs, vidCap, parser.get<std::string>("dict"), std::abs(parser.get<float>("lenght")));
+    arucoRecLoop(cs, vidCap, parser.get<std::string>("dict"), std::abs(parser.get<float>("markerSquareSize")));
 
     return 0;
 }
