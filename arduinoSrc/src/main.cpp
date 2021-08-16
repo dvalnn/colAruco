@@ -182,9 +182,9 @@ void switchColor(uint32_t *color, String userInput) {
  * @param color 
  */
 void applyAruco(uint8_t arCode[], uint8_t size, uint32_t color) {
-    int code[10] = {0};
-
-    size = addBorder(arCode, size, code);
+    // int code[10] = {0};
+    uint8_t *code = arCode;
+    // size = addBorder(arCode, size, code);
 
     for (short line = 0; line < size; line++) {
         if (line % 2) {
