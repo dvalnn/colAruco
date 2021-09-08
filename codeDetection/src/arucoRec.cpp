@@ -88,19 +88,19 @@ void maskFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, int de
     std::map<char, cv::Mat> clrChannels{{'r', bgr[2]}, {'g', bgr[1]}, {'b', bgr[0]}};
 
     cv::Mat targetCh = clrChannels[targetClr];
-    cv::Mat betaCh, gammaCh;
+    cv::Mat color1, color2;
 
     for (auto pair : clrChannels) {
         if (pair.first == targetClr)
             continue;
-        if (betaCh.empty())
-            betaCh = clrChannels[pair.first];
+        if (color1.empty())
+            color1 = clrChannels[pair.first];
         else
-            gammaCh = clrChannels[pair.first];
+            color2 = clrChannels[pair.first];
     }
 
-    cv::Mat colorMask = (targetCh > (betaCh + delta)) & (targetCh > (gammaCh + delta));
-    cv::Mat falsePositives = (betaCh < 255 - delta) & (gammaCh < 255 - delta);
+    cv::Mat colorMask = (targetCh > (color1 + delta)) & (targetCh > (color2 + delta));
+    cv::Mat falsePositives = (color1 < 255 - delta) & (color2 < 255 - delta);
 
     outFrame = cv::Mat::zeros(targetCh.rows, targetCh.cols, targetCh.type());
     outFrame = (255 * (colorMask & falsePositives));
