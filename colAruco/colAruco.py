@@ -22,10 +22,20 @@ def arduino_read():
 
 def fetch_aruco(id, dictionary) -> str:
 
-    marker_dictionary = cv2.aruco.Dictionary_get(dictionary)
-    marker = cv2.aruco.drawMarker(marker_dictionary, 0, 6)
+    side_pixels_per_dictionary = {
+        cv2.aruco.DICT_4X4_1000: 6,
+        cv2.aruco.DICT_5X5_1000: 7,
+        cv2.aruco.DICT_6X6_1000: 8,
+        # "dict7": "7",
+        cv2.aruco.DICT_ARUCO_ORIGINAL: 7,
+    }
 
-    marker_bits = [0 for _ in range(6)]
+    side_pixels = side_pixels_per_dictionary[dictionary]
+
+    marker_dictionary = cv2.aruco.Dictionary_get(dictionary)
+    marker = cv2.aruco.drawMarker(marker_dictionary, id, side_pixels)
+
+    marker_bits = [0 for _ in range(side_pixels)]
 
     for i in range(len(marker)):
         for j in range(len(marker[i])):
