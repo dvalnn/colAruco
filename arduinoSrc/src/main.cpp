@@ -45,8 +45,6 @@ void applyAruco(uint8_t arCode[], uint8_t size, uint32_t color);
 void loadFromEEPROM(uint8_t aruco[], uint8_t *size, uint8_t *brightness, uint32_t *color);
 void saveToEEPROM(uint8_t aruco[], uint8_t size, uint8_t brightness, uint32_t color);
 
-int addBorder(uint8_t arcode[], int size, int withBorder[]);
-
 //* setup code
 void setup() {
     leds.begin();  // Call this to start up the LED strip.
@@ -184,7 +182,6 @@ void switchColor(uint32_t *color, String userInput) {
 void applyAruco(uint8_t arCode[], uint8_t size, uint32_t color) {
     // int code[10] = {0};
     uint8_t *code = arCode;
-    // size = addBorder(arCode, size, code);
 
     for (short line = 0; line < size; line++) {
         if (line % 2) {
@@ -287,30 +284,4 @@ void loadFromEEPROM(uint8_t aruco[], uint8_t *size, uint8_t *brightness, uint32_
 
     EEPROM.get(slot * SAVE_SIZE + CODE_SIZE + 1, *brightness);
     EEPROM.get(slot * SAVE_SIZE + CODE_SIZE + 2, *color);
-}
-
-/**
- * @brief pads aruco code with an appropriate border
- * 
- * @param arcode input code
- * @param size input code size
- * @param withBorder returned code with border
- * @return int size of code with border
- */
-int addBorder(uint8_t arcode[], int size, int withBorder[]) {
-    size += 4;
-
-    //primeira e última filas preenchidas com 1 em todas as posições
-    int borderVal = pow(2, size);
-    withBorder[0] = borderVal;
-    withBorder[size - 1] = borderVal;
-    //segunda e penúltima filas preenchidas com 10..(0)..01
-    withBorder[1] = BIT(size - 1) + 1;
-    withBorder[size - 2] = BIT(size - 1) + 1;
-
-    //restantes filas preenchidas com o código com borda de 1 e 0
-    for (short i = 2; i < size - 2; i++)
-        withBorder[i] += (BIT(size - 1) + (arcode[i - 2] << 2) + 1);
-
-    return size;
 }
