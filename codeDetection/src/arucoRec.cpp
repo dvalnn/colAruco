@@ -41,6 +41,7 @@ int dictInput(int currDict) {
         std::cout << "Input a aruco dictionary type do detect (suported types: -h / --help): ";
         std::cin >> std::setw(10) >> userInput;
 
+        // putback of a newline is done to avoid infinite loops and EOF breaking the code
         if (std::cin.eof()) {
             std::cin.clear();
             std::cin.putback('\n');
