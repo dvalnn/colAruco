@@ -14,6 +14,7 @@
 // ####################################################################################################################
 
 #define DELTA 12
+#define MAX_VIDEO_CAPTURE 64
 
 auto ARUCO_PARAMS = cv::aruco::DetectorParameters::create();
 
@@ -231,8 +232,9 @@ int main(int argc, char **argv) {
     if (parser.has("camera")) {
         std::cout << "[INFO] Using specified webcam path {" << parser.get<std::string>("camera") << "}\n";
         vidCap.open(parser.get<std::string>("camera"), cv::CAP_ANY);
+
     } else {
-        for (short i = 0; i <= 10; i++) {
+        for (short i = 0; i < MAX_VIDEO_CAPTURE; i++) {
             std::cout << "[INFO] Searching for available video capture device on index " << i << "\n";
             vidCap.open(i);
 

@@ -10,6 +10,7 @@
 
 using namespace std;
 
+#define MAX_VIDEO_CAPTURE 64
 #define INVALID_PATH_ERROR_MSG "[ERROR] Camera settings file must be supported by opencv (.yml | .xml | .json)"
 
 bool filenameIsValid(const string filename) {
@@ -124,13 +125,20 @@ bool CameraSettings::runCalibrationAndSave(const cv::Size chessboardSize, const 
     vector<vector<cv::Point2f>> markerCorners, rejectedCandidates;
 
     cv::VideoCapture vid;
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < MAX_VIDEO_CAPTURE; i++) {
         vid.open(i);
         if (vid.isOpened())
             break;
+
+        cout << "\u001b[1A"   //move cursor up one line
+             << "\r"          //move cursor to the beginning of the line
+             << "\u001b[2K";  //clear line
     }
-    if (!vid.isOpened())
+
+    if (!vid.isOpened()) {
+        cout << "webcam not found" << endl;
         return 0;
+    }
 
     int framesPerSecond = 30;
     int nImages = 0;
@@ -167,8 +175,9 @@ bool CameraSettings::runCalibrationAndSave(const cv::Size chessboardSize, const 
                     this->cameraMatrix = cameraMatrix;
                     this->distortionCoeffs = distortionCoefficients;
 
-                    if (!saveCalibrationResults(filename, cameraMatrix, distortionCoefficients)) {
-                    }
+                    if (!saveCalibrationResults(filename, cameraMatrix, distortionCoefficients))
+                        cout << "Failed to save calibration results to " << filename << endl;
+
                     cout << "Press any key to end calibration" << endl;
 
                     cv::waitKey(0);
