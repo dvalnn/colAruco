@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
@@ -35,6 +36,7 @@ CameraSettings::CameraSettings(string filepath) {
         return;
     }
 
+    fs["Video_Device_Name"] >> deviceName;
     fs["Camera_Matrix"] >> cameraMatrix;
     fs["Distortion_Coefficients"] >> distortionCoeffs;
 
@@ -46,18 +48,25 @@ CameraSettings::CameraSettings(string filepath) {
     OK = true;
 }
 
-bool CameraSettings::saveCalibrationResults(string filepath, cv::Mat camMatrix, cv::Mat distCoeffs) {
+bool CameraSettings::saveCalibrationResults(string filepath, cv::Mat camMatrix, cv::Mat distCoeffs, int camIndex) {
     if (not filenameIsValid(filepath)) {
         cout << INVALID_PATH_ERROR_MSG << endl;
         return false;
     }
-
+    //? vid.getBackendName ??
     cv::FileStorage fs(filepath, cv::FileStorage::WRITE);
     if (not fs.isOpened()) {
         cout << "[ERROR] could not open specified file (" << filepath << ") " << endl;
         return false;
     }
 
+    fstream videoDevice;
+    videoDevice.open("/sys/class/video4linux/video" + std::to_string(camIndex) + "/name", ios::in);
+    string videoDeviceName;
+
+    videoDevice >> videoDeviceName;
+
+    fs << "Video_Device_Name" << videoDeviceName;
     fs << "Camera_Matrix" << camMatrix;
     fs << "Distortion_Coefficients" << distCoeffs;
 
@@ -175,7 +184,7 @@ bool CameraSettings::runCalibrationAndSave(const cv::Size chessboardSize, const 
                     this->cameraMatrix = cameraMatrix;
                     this->distortionCoeffs = distortionCoefficients;
 
-                    if (!saveCalibrationResults(filename, cameraMatrix, distortionCoefficients))
+                    if (!saveCalibrationResults(filename, cameraMatrix, distortionCoefficients, 1))  //! change to actuall id
                         cout << "Failed to save calibration results to " << filename << endl;
 
                     cout << "Press any key to end calibration" << endl;

@@ -13,7 +13,9 @@ class CameraSettings {
     bool runCalibrationAndSave(const cv::Size chessboardSize, const float calibrationSquareSize);
 
    private:
-    bool saveCalibrationResults(string filepath, cv::Mat camMatrix, cv::Mat distCoeffs);
+    string deviceName;
+
+    bool saveCalibrationResults(string filepath, cv::Mat camMatrix, cv::Mat distCoeffs, int camIndex);
     void createKnownBoardPositions(cv::Size boardSize, float squareEdgelength, vector<cv::Point3f>& corners);
     void getChessboardCorners(vector<cv::Mat> images, vector<vector<cv::Point2f>>& allFoundCorners,
                               cv::Size chessboardSize, bool showResults);
