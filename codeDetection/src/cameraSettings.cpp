@@ -36,7 +36,7 @@ CameraSettings::CameraSettings(string filepath) {
         return;
     }
 
-    fs["Video_Device_Name"] >> deviceName;
+    fs["Device_Name"] >> deviceName;
     fs["Camera_Matrix"] >> cameraMatrix;
     fs["Distortion_Coefficients"] >> distortionCoeffs;
 
@@ -62,11 +62,11 @@ bool CameraSettings::saveCalibrationResults(string filepath, cv::Mat camMatrix, 
 
     fstream videoDevice;
     videoDevice.open("/sys/class/video4linux/video" + std::to_string(camIndex) + "/name", ios::in);
-    string videoDeviceName;
 
-    videoDevice >> videoDeviceName;
+    char videoDeviceName[1024];
+    videoDevice.getline(videoDeviceName, 1024);
 
-    fs << "Video_Device_Name" << videoDeviceName;
+    fs << "Device_Name" << videoDeviceName;
     fs << "Camera_Matrix" << camMatrix;
     fs << "Distortion_Coefficients" << distCoeffs;
 
