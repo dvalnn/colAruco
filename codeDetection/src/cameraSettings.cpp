@@ -123,8 +123,12 @@ bool CameraSettings::runCalibrationAndSave(const cv::Size chessboardSize, const 
     vector<cv::Mat> savedImages;
     vector<vector<cv::Point2f>> markerCorners, rejectedCandidates;
 
-    cv::VideoCapture vid(1);
-
+    cv::VideoCapture vid;
+    for (int i = 0; i < 10; i++) {
+        vid.open(i);
+        if (vid.isOpened())
+            break;
+    }
     if (!vid.isOpened())
         return 0;
 
