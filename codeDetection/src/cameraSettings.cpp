@@ -36,9 +36,11 @@ CameraSettings::CameraSettings(string filepath) {
         return;
     }
 
-    fs["Device_Name"] >> deviceName;
-    fs["Camera_Matrix"] >> cameraMatrix;
-    fs["Distortion_Coefficients"] >> distortionCoeffs;
+    cv::FileNode fn = fs["device1"];
+
+    fn["Device_Name"] >> deviceName;
+    fn["Camera_Matrix"] >> cameraMatrix;
+    fn["Distortion_Coefficients"] >> distortionCoeffs;
 
     if (cameraMatrix.empty() or distortionCoeffs.empty()) {
         cout << "[ERROR] Invalid calibration data (loaded from: " << filepath << ")" << endl;
@@ -48,7 +50,7 @@ CameraSettings::CameraSettings(string filepath) {
     OK = true;
 }
 
-bool CameraSettings::saveCalibrationResults(string filepath, cv::Mat camMatrix, cv::Mat distCoeffs, int camIndex) {
+bool CameraSettings::saveCalibrationResults(string filepath, cv::Mat camMatrix, cv::Mat distCoeffs) {
     if (not filenameIsValid(filepath)) {
         cout << INVALID_PATH_ERROR_MSG << endl;
         return false;
@@ -61,14 +63,17 @@ bool CameraSettings::saveCalibrationResults(string filepath, cv::Mat camMatrix, 
     }
 
     fstream videoDevice;
-    videoDevice.open("/sys/class/video4linux/video" + std::to_string(camIndex) + "/name", ios::in);
+    videoDevice.open("/sys/class/video4linux/video" + std::to_string(this->cameraIndex) + "/name", ios::in);
 
     char videoDeviceName[1024];
     videoDevice.getline(videoDeviceName, 1024);
 
-    fs << "Device_Name" << videoDeviceName;
-    fs << "Camera_Matrix" << camMatrix;
-    fs << "Distortion_Coefficients" << distCoeffs;
+    fs << "device1"
+       << "{:"
+       << "Video_Device" << this->deviceName
+       << "Camera_Matrix" << camMatrix
+       << "Distortion_Coefficients" << distCoeffs
+       << "}";
 
     return true;
 }
@@ -149,6 +154,9 @@ bool CameraSettings::runCalibrationAndSave(const cv::Size chessboardSize, const 
         return 0;
     }
 
+    // saveCalibrationResults("../resources/calib_results.json", cameraMatrix, distortionCoefficients, 1);
+    // return 0;
+
     int framesPerSecond = 30;
     int nImages = 0;
 
@@ -184,7 +192,7 @@ bool CameraSettings::runCalibrationAndSave(const cv::Size chessboardSize, const 
                     this->cameraMatrix = cameraMatrix;
                     this->distortionCoeffs = distortionCoefficients;
 
-                    if (!saveCalibrationResults(filename, cameraMatrix, distortionCoefficients, 1))  //! change to actuall id
+                    if (!saveCalibrationResults(filename, cameraMatrix, distortionCoefficients))
                         cout << "Failed to save calibration results to " << filename << endl;
 
                     cout << "Press any key to end calibration" << endl;

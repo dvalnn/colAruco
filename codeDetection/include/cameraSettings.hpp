@@ -5,6 +5,7 @@ using namespace std;
 
 class CameraSettings {
    public:
+    int cameraIndex;
     bool OK = false;
     cv::Mat cameraMatrix;
     cv::Mat distortionCoeffs;
@@ -14,8 +15,9 @@ class CameraSettings {
 
    private:
     string deviceName;
-
-    bool saveCalibrationResults(string filepath, cv::Mat camMatrix, cv::Mat distCoeffs, int camIndex);
+    string calibratedDeviceName;
+    
+    bool saveCalibrationResults(string filepath, cv::Mat camMatrix, cv::Mat distCoeffs);
     void createKnownBoardPositions(cv::Size boardSize, float squareEdgelength, vector<cv::Point3f>& corners);
     void getChessboardCorners(vector<cv::Mat> images, vector<vector<cv::Point2f>>& allFoundCorners,
                               cv::Size chessboardSize, bool showResults);
