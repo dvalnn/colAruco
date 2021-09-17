@@ -49,7 +49,14 @@ CameraSettings::CameraSettings(string filepath) {
 
     fstream deviceNameFile;
     deviceNameFile.open("/sys/class/video4linux/video" + std::to_string(this->cameraIndex) + "/name", ios::in);
+
+    if (!deviceNameFile.is_open()) {
+        cout << "[FATAL] Unable to open video device system specifications\n";
+        return;
+    }
+
     getline(deviceNameFile, this->deviceName);
+    deviceNameFile.close();
 
     if (not filenameIsValid(filepath)) {
         cout << INVALID_PATH_ERROR_MSG << endl;
@@ -63,11 +70,25 @@ CameraSettings::CameraSettings(string filepath) {
         return;
     }
 
-    cv::FileNode fn = fs["device1"];
+    // cv::FileStorage fs(filepath, cv::FileStorage::READ);
+    // int i = 1;
+    // if (fs.isOpened()) {
 
-    fn["Device_Name"] >> this->calibratedDeviceName;
+    // }
 
-    if (this->calibratedDeviceName != this->deviceName) {
+    int i = 0;
+    cv::FileNode fn;
+    while (true) {
+        i++;
+        fn = fs["device" + to_string(i)];
+        fn["Device_Name"] >> this->calibratedDeviceName;
+
+        if (this->calibratedDeviceName.empty() or this->calibratedDeviceName == this->deviceName)
+            break;
+    }
+
+    // cv::FileNode fn = fs["device" + to_string(i)];
+    if (this->calibratedDeviceName.empty()) {
         cout << "[INFO] calibration profile was not found for current device\n";
         return;
     }
@@ -91,15 +112,23 @@ bool CameraSettings::saveCalibrationResults(string filepath, cv::Mat camMatrix, 
         return false;
     }
 
-    cv::FileStorage fs(filepath, cv::FileStorage::APPEND);
-    if (not fs.isOpened()) {
-        cout << "[ERROR] could not open specified file (" << filepath << ") " << endl;
-        return false;
+    cv::FileStorage fs(filepath, cv::FileStorage::READ);
+    int i = 1;
+    if (fs.isOpened()) {
+        while (true) {
+            cv::FileNode node = fs["device" + to_string(i)];
+            node["Device_Name"] >> this->calibratedDeviceName;
+            if (this->calibratedDeviceName.empty())
+                break;
+            i++;
+        }
     }
 
-    fs << "device1"
+    fs.open(filepath, cv::FileStorage::APPEND);
+
+    fs << "device" + to_string(i)
        << "{:"
-       << "Video_Device" << this->deviceName
+       << "Device_Name" << this->deviceName
        << "Camera_Matrix" << camMatrix
        << "Distortion_Coefficients" << distCoeffs
        << "}";
@@ -167,23 +196,9 @@ bool CameraSettings::runCalibrationAndSave(const cv::Size chessboardSize, const 
     vector<cv::Mat> savedImages;
     vector<vector<cv::Point2f>> markerCorners, rejectedCandidates;
 
-    cv::VideoCapture vid;
-    for (int i = 0; i < MAX_VIDEO_CAPTURE; i++) {
-        vid.open(i);
-        if (vid.isOpened())
-            break;
+    cv::VideoCapture vid(this->cameraIndex);
 
-        cout << "\u001b[1A"   //move cursor up one line
-             << "\r"          //move cursor to the beginning of the line
-             << "\u001b[2K";  //clear line
-    }
-
-    if (!vid.isOpened()) {
-        cout << "webcam not found" << endl;
-        return 0;
-    }
-
-    // saveCalibrationResults("../resources/calib_results.json", cameraMatrix, distortionCoefficients, 1);
+    // saveCalibrationResults("../resources/calib_results.json", cameraMatrix, distortionCoefficients);
     // return 0;
 
     int framesPerSecond = 30;
