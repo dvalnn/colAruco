@@ -24,6 +24,33 @@ bool filenameIsValid(const string filename) {
  * @param filepath 
  */
 CameraSettings::CameraSettings(string filepath) {
+    cv::VideoCapture vidCap;
+
+    for (short i = 0; i < MAX_VIDEO_CAPTURE; i++) {
+        cout << "[INFO] Searching for available video capture device on index " << i << "\n";
+        vidCap.open(i);
+
+        if (vidCap.isOpened()) {
+            cout << "[INFO] Found video capture device found: index " << i << endl;
+            this->cameraIndex = i;
+            vidCap.release();
+            break;
+        }
+
+        cout << "\u001b[1A"   //move cursor up one line
+             << "\r"          //move cursor to the beginning of the line
+             << "\u001b[2K";  //clear line
+    }
+
+    if (this->cameraIndex == -1) {
+        cout << "[ERROR] No available video capture device was found\n";
+        return;
+    }
+
+    fstream deviceNameFile;
+    deviceNameFile.open("/sys/class/video4linux/video" + std::to_string(this->cameraIndex) + "/name", ios::in);
+    getline(deviceNameFile, this->deviceName);
+
     if (not filenameIsValid(filepath)) {
         cout << INVALID_PATH_ERROR_MSG << endl;
         return;
@@ -38,16 +65,24 @@ CameraSettings::CameraSettings(string filepath) {
 
     cv::FileNode fn = fs["device1"];
 
-    fn["Device_Name"] >> deviceName;
-    fn["Camera_Matrix"] >> cameraMatrix;
-    fn["Distortion_Coefficients"] >> distortionCoeffs;
+    fn["Device_Name"] >> this->calibratedDeviceName;
 
-    if (cameraMatrix.empty() or distortionCoeffs.empty()) {
+    if (this->calibratedDeviceName != this->deviceName) {
+        cout << "[INFO] calibration profile was not found for current device\n";
+        return;
+    }
+
+    fn["Camera_Matrix"] >> this->cameraMatrix;
+    fn["Distortion_Coefficients"] >> this->distortionCoeffs;
+
+    if (this->cameraMatrix.empty() or this->distortionCoeffs.empty()) {
         cout << "[ERROR] Invalid calibration data (loaded from: " << filepath << ")" << endl;
         return;
     }
 
-    OK = true;
+    cout << "[INFO] calibration profile for current device loaded successfully\n";
+
+    this->OK = true;
 }
 
 bool CameraSettings::saveCalibrationResults(string filepath, cv::Mat camMatrix, cv::Mat distCoeffs) {
@@ -55,18 +90,12 @@ bool CameraSettings::saveCalibrationResults(string filepath, cv::Mat camMatrix, 
         cout << INVALID_PATH_ERROR_MSG << endl;
         return false;
     }
-    //? vid.getBackendName ??
-    cv::FileStorage fs(filepath, cv::FileStorage::WRITE);
+
+    cv::FileStorage fs(filepath, cv::FileStorage::APPEND);
     if (not fs.isOpened()) {
         cout << "[ERROR] could not open specified file (" << filepath << ") " << endl;
         return false;
     }
-
-    fstream videoDevice;
-    videoDevice.open("/sys/class/video4linux/video" + std::to_string(this->cameraIndex) + "/name", ios::in);
-
-    char videoDeviceName[1024];
-    videoDevice.getline(videoDeviceName, 1024);
 
     fs << "device1"
        << "{:"

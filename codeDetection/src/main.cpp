@@ -14,7 +14,6 @@
 // ####################################################################################################################
 
 #define DELTA 12
-#define MAX_VIDEO_CAPTURE 64
 
 auto ARUCO_PARAMS = cv::aruco::DetectorParameters::create();
 
@@ -218,6 +217,8 @@ int main(int argc, char **argv) {
     }
 
     CameraSettings cs("../resources/calib_results.json");
+    if (cs.cameraIndex == -1)
+        return 0;
 
     const cv::Size chessboardSize = cv::Size(parser.get<int>("vc"), parser.get<int>("hc"));
     const float calibrationSquareSize = parser.get<float>("calibrationSquareSize");
@@ -228,27 +229,7 @@ int main(int argc, char **argv) {
     }
 
     cv::VideoCapture vidCap;
-
-    if (parser.has("camera")) {
-        std::cout << "[INFO] Using specified webcam path {" << parser.get<std::string>("camera") << "}\n";
-        vidCap.open(parser.get<std::string>("camera"), cv::CAP_ANY);
-
-    } else {
-        for (short i = 0; i < MAX_VIDEO_CAPTURE; i++) {
-            std::cout << "[INFO] Searching for available video capture device on index " << i << "\n";
-            vidCap.open(i);
-
-            if (vidCap.isOpened())
-                break;
-
-            cout << "\u001b[1A"   //move cursor up one line
-                 << "\r"          //move cursor to the beginning of the line
-                 << "\u001b[2K";  //clear line
-
-            if (i == 10)
-                return 0;
-        }
-    }
+    vidCap.open(cs.cameraIndex);
 
     arucoRecLoop(cs, vidCap, parser.get<std::string>("dict"), std::abs(parser.get<float>("markerSquareSize")));
 
