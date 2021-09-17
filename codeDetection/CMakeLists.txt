@@ -6,7 +6,7 @@ project(arucoRec)
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
-add_executable(arucoRec src/arucoRec.cpp 
+add_executable(arucoRec src/main.cpp 
                         src/arucoSettings.cpp   include/arucoSettings.hpp
                         src/cameraSettings.cpp  include/arucoSettings.hpp)
 
