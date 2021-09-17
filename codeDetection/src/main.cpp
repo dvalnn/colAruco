@@ -211,6 +211,11 @@ int main(int argc, char **argv) {
         return 0;
     }
 
+    if (std::abs(parser.get<float>("markerSquareSize")) <= 0) {
+        cout << "[FATAL] marker lenght must be greater than zero (--ms=x, x > 0)\n";
+        return 0;
+    }
+
     if (!supportedArucoTypes.contains(parser.get<std::string>("dict"))) {
         std::cout << "[FATAL] aruco tag of type {dict" << parser.get<std::string>("dict") << "} is not supported\n";
         return -1;
