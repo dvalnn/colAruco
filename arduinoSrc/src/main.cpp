@@ -75,7 +75,7 @@ void setup() {
 void loop() {
     static uint32_t colorOnDisplay = 0;
     static uint8_t brightnessOnDiplay = 0;
-    static uint8_t arucoOnDisplay[6] = {0};
+    static uint8_t arucoOnDisplay[9] = {0};
     static uint8_t arucoCodeSize = 0;
 
     static bool initialized = false;
