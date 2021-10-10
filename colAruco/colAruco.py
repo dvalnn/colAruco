@@ -31,20 +31,25 @@ def fetch_aruco(id, dictionary) -> str:
     }
 
     side_pixels = side_pixels_per_dictionary[dictionary]
+    marker_size = side_pixels + 2
 
     marker_dictionary = cv2.aruco.Dictionary_get(dictionary)
     marker = cv2.aruco.drawMarker(marker_dictionary, id, side_pixels)
 
-    marker_bits = [0 for _ in range(side_pixels)]
+    marker_bytes = [0 for _ in range(side_pixels)]
 
     for i in range(len(marker)):
         for j in range(len(marker[i])):
             if marker[i][j]:
-                marker_bits[i] += 1 << (len(marker[i]) - j - 1)
+                marker_bytes[i] += 1 << (len(marker[i]) - j - 1)
+        marker_bytes[i] = (1 << (marker_size - 1)) + (marker_bytes[i] << 1) + 1
 
-    bytes_string = " ".join(str(marker_bits[i]) for i in range(len(marker_bits)))
+    marker_bytes.insert(0, 2 ** marker_size - 1)
+    marker_bytes.append(2 ** marker_size - 1)
 
-    return f"code {len(marker_bits)} {bytes_string}"
+    bytes_string = " ".join(str(marker_bytes[i]) for i in range(len(marker_bytes)))
+
+    return f"code {len(marker_bytes)} {bytes_string}"
 
 
 def man():
