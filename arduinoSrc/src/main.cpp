@@ -60,6 +60,8 @@ void setup() {
     uint8_t arucoOnDisplay[8] = {0};
     uint8_t arucoCodeSize = 0;
 
+    testLedStrip();
+
     loadFromEEPROM(arucoOnDisplay, &arucoCodeSize, &brightnessOnDiplay, &colorOnDisplay);
     resetLedStrip();
     leds.setBrightness(brightnessOnDiplay);
