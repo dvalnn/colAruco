@@ -26,7 +26,7 @@ def fetch_aruco(id, dictionary) -> str:
         cv2.aruco.DICT_4X4_1000: 6,
         cv2.aruco.DICT_5X5_1000: 7,
         cv2.aruco.DICT_6X6_1000: 8,
-        # "dict7": "7",
+        #cv2.aruco.DICT_7X7_1000: "9",
         cv2.aruco.DICT_ARUCO_ORIGINAL: 7,
     }
 
@@ -221,7 +221,7 @@ if __name__ == "__main__":
         "dict4": cv2.aruco.DICT_4X4_1000,
         "dict5": cv2.aruco.DICT_5X5_1000,
         "dict6": cv2.aruco.DICT_6X6_1000,
-        # "dict7": "7",
+        #"dict7": cv2.aruco.DICT_7X7_1000,
         "dict_or": cv2.aruco.DICT_ARUCO_ORIGINAL,
     }
 
