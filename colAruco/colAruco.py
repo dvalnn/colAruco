@@ -27,7 +27,7 @@ def fetch_aruco(id, dictionary) -> str:
         cv2.aruco.DICT_5X5_1000: 7,
         cv2.aruco.DICT_6X6_1000: 8,
         #cv2.aruco.DICT_7X7_1000: "9",
-        cv2.aruco.DICT_ARUCO_ORIGINAL: 7,
+        cv2.aruco.DICT_ARUCO_ORIGINAL: 7, # same size as 5x5
     }
 
     side_pixels = side_pixels_per_dictionary[dictionary]
