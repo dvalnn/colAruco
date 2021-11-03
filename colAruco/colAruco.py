@@ -109,7 +109,7 @@ def input_parser(usr_input: list) -> tuple:
         try:
             id = int(usr_input[usr_input.index("code") + 1])
             dict_type = usr_input[usr_input.index("code") + 2]
-        except IndexError:
+        except (IndexError, ValueError) as e:
             print("[ERROR] Invalid code input")
         else:
             if id in range(0, 1000) and dict_type in ARUCO_DICT.keys():
