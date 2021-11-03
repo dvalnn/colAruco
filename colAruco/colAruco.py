@@ -181,7 +181,7 @@ def main():
                 arduino_write(input_flag + " " + formated_input)
                 break
             elif error:
-                print("\033[3F", end="\033[K")  # cursor 2 lines up and clear line
+                print("\033[2F", end="\033[K")  # moves cursor 2 lines up and clears them
                 pass
             else:
                 print("[INFO] Input carries no meaning, arduino will not be updated", end="\033[F\033[K")
