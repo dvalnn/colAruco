@@ -122,7 +122,7 @@ void processFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, cv:
     cv::Mat dilKernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, kSize);
     cv::Mat erKernel = cv::getStructuringElement(cv::MORPH_RECT, kSize);
 
-    //image dilation and erosion for eliminating noise created by the color mask
+    // image dilation and erosion for eliminating noise created by the color mask
     cv::dilate(outFrame, outFrame, dilKernel);
     cv::erode(outFrame, outFrame, erKernel);
 }
@@ -151,6 +151,7 @@ void detectMarkers(CameraSettings cs, cv::Mat &original, cv::Mat &masked, cv::Pt
 void arucoRecLoop(CameraSettings cs, cv::VideoCapture &vidCap, std::string dict, float mLen) {
     cv::Mat frame, maskedFrame;
 
+    bool grayscale = true;
     char targetColorCh = colorInput(targetColorCh);
     int dictIndex = supportedArucoTypes.at(dict);
     auto arucoDict = cv::aruco::getPredefinedDictionary(dictIndex);
@@ -164,11 +165,16 @@ void arucoRecLoop(CameraSettings cs, cv::VideoCapture &vidCap, std::string dict,
             break;
         }
 
-        processFrame(frame, maskedFrame, targetColorCh);
-        detectMarkers(cs, frame, maskedFrame, arucoDict, mLen);
+        if (grayscale or targetColorCh != 'w')  // blur true or cl r/g/b => processFrame
+            processFrame(frame, maskedFrame, targetColorCh);
 
+        detectMarkers(cs, frame, maskedFrame, arucoDict, mLen);
         cv::imshow("Live", frame);
-        cv::imshow("Color Mask", maskedFrame);
+
+        if (maskedFrame.empty() or not grayscale)
+            cv::destroyWindow("Color Mask");
+        else
+            cv::imshow("Color Mask", maskedFrame);
 
         //----------------------- input waitkeys -----------------------
         int key = cv::waitKey(1) & 0xff;
@@ -180,6 +186,10 @@ void arucoRecLoop(CameraSettings cs, cv::VideoCapture &vidCap, std::string dict,
 
             case 'c':
                 targetColorCh = colorInput(targetColorCh);
+                break;
+
+            case 'b':
+                grayscale = not grayscale;
                 break;
 
             case 'q':
