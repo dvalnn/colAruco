@@ -126,7 +126,7 @@ def input_parser(usr_input: list) -> tuple:
 ########################################### MAIN ##################################################
 
 
-def main(arduino: serial.Serial):
+def main():
     # main loop
     while True:
         loop_start = time()
@@ -225,4 +225,4 @@ if __name__ == "__main__":
         "dict_or": cv2.aruco.DICT_ARUCO_ORIGINAL,
     }
 
-    main(arduino)
+    main()
