@@ -26,8 +26,8 @@ def fetch_aruco(id, dictionary) -> str:
         cv2.aruco.DICT_4X4_1000: 6,
         cv2.aruco.DICT_5X5_1000: 7,
         cv2.aruco.DICT_6X6_1000: 8,
-        #cv2.aruco.DICT_7X7_1000: "9",
-        cv2.aruco.DICT_ARUCO_ORIGINAL: 7, # same size as 5x5
+        # cv2.aruco.DICT_7X7_1000: "9",
+        cv2.aruco.DICT_ARUCO_ORIGINAL: 7,  # same size as 5x5
     }
 
     side_pixels = side_pixels_per_dictionary[dictionary]
@@ -71,10 +71,8 @@ def input_parser(usr_input: list) -> tuple:
         error = True
         try:
             tmp = int(usr_input[usr_input.index("br") + 1])
-        except ValueError:
-            print("[ERROR] invalid brightness input - not integer value")
-        except IndexError:
-            print("[ERROR] invalid brightness input - value not found")
+        except (IndexError, ValueError) as e:
+            print("[ERROR] invalid brightness input")
         else:
             if tmp in range(0, 256):
                 error = False
@@ -221,7 +219,7 @@ if __name__ == "__main__":
         "dict4": cv2.aruco.DICT_4X4_1000,
         "dict5": cv2.aruco.DICT_5X5_1000,
         "dict6": cv2.aruco.DICT_6X6_1000,
-        #"dict7": cv2.aruco.DICT_7X7_1000,
+        # "dict7": cv2.aruco.DICT_7X7_1000,
         "dict_or": cv2.aruco.DICT_ARUCO_ORIGINAL,
     }
 
