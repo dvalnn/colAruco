@@ -82,7 +82,7 @@ char colorInput(char currClr) {
     return userInput;
 }
 
-void maskFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, int delta = DELTA) {
+void maskFrame(const cv::Mat& inFrame, cv::Mat& outFrame, char targetClr, int delta = DELTA) {
     cv::Mat bgr[3];
     cv::split(inFrame, bgr);
 
@@ -107,7 +107,7 @@ void maskFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, int de
     outFrame = (255 * (colorMask & falsePositives));
 }
 
-void processFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, cv::Size kSize = cv::Size(10, 10)) {
+void processFrame(const cv::Mat& inFrame, cv::Mat& outFrame, char targetClr, cv::Size kSize = cv::Size(10, 10)) {
     // normal color for the codes -- handled by default by openCV
     if (targetClr == 'w')
         return cv::cvtColor(inFrame, outFrame, cv::COLOR_BGR2GRAY);
@@ -127,7 +127,7 @@ void processFrame(const cv::Mat &inFrame, cv::Mat &outFrame, char targetClr, cv:
     cv::erode(outFrame, outFrame, erKernel);
 }
 
-void detectMarkers(CameraSettings cs, cv::Mat &original, cv::Mat &masked, cv::Ptr<cv::aruco::Dictionary> dict, float mLen) {
+void detectMarkers(CameraSettings cs, cv::Mat& original, cv::Mat& masked, cv::Ptr<cv::aruco::Dictionary> dict, float mLen) {
     std::vector<int> ids;
     std::vector<cv::Vec3d> rvecs, tvecs;
     std::vector<std::vector<cv::Point2f> > corners, rejected;
@@ -148,7 +148,7 @@ void detectMarkers(CameraSettings cs, cv::Mat &original, cv::Mat &masked, cv::Pt
 
 // ####################################################################################################################
 
-void arucoRecLoop(CameraSettings cs, cv::VideoCapture &vidCap, std::string dict, float mLen) {
+void arucoRecLoop(CameraSettings cs, cv::VideoCapture& vidCap, std::string dict, float mLen) {
     cv::Mat frame, maskedFrame;
 
     bool grayscale = true;
@@ -198,7 +198,7 @@ void arucoRecLoop(CameraSettings cs, cv::VideoCapture &vidCap, std::string dict,
     }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     const std::string keys =
         "{help h                          |      | print this message                                                 }"
         "{dict d                          | 4_50 | dictionary used for code detection                                 }"
