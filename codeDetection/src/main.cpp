@@ -188,7 +188,7 @@ void arucoRecLoop(CameraSettings cs, cv::VideoCapture& vidCap, std::string dict,
                 targetColorCh = colorInput(targetColorCh);
                 break;
 
-            case 'b':
+            case 'g':
                 grayscale = not grayscale;
                 break;
 
