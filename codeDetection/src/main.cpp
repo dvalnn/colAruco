@@ -167,7 +167,9 @@ void arucoRecLoop(CameraSettings cs, cv::VideoCapture& vidCap, std::string dict,
 
         if (grayscale or targetColorCh != 'w')  // blur true or cl r/g/b => processFrame
             processFrame(frame, maskedFrame, targetColorCh);
-
+        else
+            maskedFrame = frame;
+        
         detectMarkers(cs, frame, maskedFrame, arucoDict, mLen);
         cv::imshow("Live", frame);
 
